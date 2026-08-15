@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildExport, formatDay, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
 import { buildActivitySummary } from "../lib/activity-stats";
+import { systemAppName } from "../lib/app-brand";
 
 const older: ChronicleEntry = {
   id: "older",
@@ -68,5 +69,11 @@ describe("chronicle data utilities", () => {
     expect(summary.activeDays).toBe(1);
     expect(summary.currentStreak).toBe(1);
     expect(summary.weeks).toHaveLength(12);
+  });
+
+  it("uses a Chinese name only for Chinese system locales", () => {
+    expect(systemAppName("zh-CN")).toBe("刻录");
+    expect(systemAppName("en-US")).toBe("Chronicle");
+    expect(systemAppName("ja-JP")).toBe("Chronicle");
   });
 });

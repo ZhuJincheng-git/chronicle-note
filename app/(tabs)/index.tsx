@@ -39,6 +39,7 @@ import { useChronicle } from "@/lib/chronicle-store";
 import { exportChronicle } from "@/lib/export-chronicle";
 import { haptic } from "@/lib/haptics";
 import { buildActivitySummary } from "@/lib/activity-stats";
+import { systemAppName } from "../../lib/app-brand";
 
 type TimelineSection = { data: ChronicleEntry[]; iso: string; key: string };
 type DeleteTarget = ChronicleEntry | "all" | null;
@@ -193,7 +194,7 @@ export default function HomeScreen() {
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.wordmark, { color: colors.text }]}>{copy("appName")}</Text>
+            <Text style={[styles.wordmark, { color: colors.text }]}>{systemAppName()}</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>{copy("today")} · {entries.length} {copy("entries")}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
