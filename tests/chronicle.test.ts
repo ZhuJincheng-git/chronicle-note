@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildExport, isEndAfterStart, isValidTime, sortEntries, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
+import { buildExport, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
 
 const older: ChronicleEntry = {
   id: "older",
@@ -44,5 +44,12 @@ describe("chronicle data utilities", () => {
   it("requires a ranged entry to end after it starts", () => {
     expect(isEndAfterStart("2026-08-15", "08:00", "09:00", "UTC")).toBe(true);
     expect(isEndAfterStart("2026-08-15", "09:00", "08:00", "UTC")).toBe(false);
+  });
+
+  it("provides translated interface copy for the expanded language set", () => {
+    expect(t("ko", "settings")).toBe("설정");
+    expect(t("es", "today")).toBe("Hoy");
+    expect(t("fr", "done")).toBe("Terminé");
+    expect(t("de", "timeZone")).toBe("Zeitzone");
   });
 });

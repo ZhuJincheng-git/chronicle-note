@@ -20,7 +20,7 @@ const ChronicleContext = createContext<ChronicleContextValue | null>(null);
 function normalizeState(value: Partial<ChronicleState>): ChronicleState {
   return {
     entries: Array.isArray(value.entries) ? sortEntries(value.entries) : [],
-    locale: value.locale === "en" || value.locale === "ja" ? value.locale : "zh",
+    locale: value.locale === "en" || value.locale === "ja" || value.locale === "ko" || value.locale === "es" || value.locale === "fr" || value.locale === "de" ? value.locale : "zh",
     theme: value.theme === "dark" ? "dark" : "light",
     timeZone: typeof value.timeZone === "string" && value.timeZone ? value.timeZone : "system",
   };
