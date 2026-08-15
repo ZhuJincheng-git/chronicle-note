@@ -239,7 +239,7 @@ export default function HomeScreen() {
       <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={(next) => { if (next && startTime >= endTime) setStartTime(previousMinute(endTime)); setIsRange(next); }} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
       <StatsSheet visible={statsOpen} colors={colors} locale={locale} summary={activitySummary} onClose={() => setStatsOpen(false)} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
-      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} minimumTime={timePickerTarget === "end" && isRange ? startTime : undefined} maximumTime={timePickerTarget === "start" && isRange ? endTime : undefined} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
+      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} minimumTime={timePickerTarget === "end" && isRange ? startTime : undefined} maximumTime={timePickerTarget === "end" && entryDate === currentDateInTimeZone(timeZone) ? currentTimeInTimeZone(timeZone) : timePickerTarget === "start" && isRange ? endTime : undefined} maximumTimeInclusive={timePickerTarget === "end" && entryDate === currentDateInTimeZone(timeZone)} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
       <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); setExportFormatOpen(true); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
       <ExportFormatSheet visible={exportFormatOpen} colors={colors} locale={locale} onClose={() => { setExportFormatOpen(false); setSettingsOpen(true); }} onSelect={(format) => { setExportFormatOpen(false); handleExport(format); }} />
       <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => { setLanguageOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); setSettingsOpen(true); }} />
@@ -313,7 +313,7 @@ function DatePickerSheet({ visible, value, locale, timeZone, colors, onClose, on
   return <PickerSheet visible={visible} colors={colors} title={copy("chooseDate")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={years.map(String)} selected={String(year)} onSelect={(next) => { const nextYear = Number(next); yearRef.current = nextYear; const nextMonth = Math.min(monthRef.current, nextYear === now.year ? now.month : 12); monthRef.current = nextMonth; setYear(nextYear); setMonth(nextMonth); }} colors={colors} /><WheelColumn values={months.map((item) => String(item).padStart(2, "0"))} selected={String(month).padStart(2, "0")} onSelect={(next) => { monthRef.current = Number(next); setMonth(Number(next)); }} colors={colors} /><WheelColumn values={days.map((item) => String(item).padStart(2, "0"))} selected={String(Math.min(day, days.length)).padStart(2, "0")} onSelect={(next) => { dayRef.current = Number(next); setDay(Number(next)); }} colors={colors} /></PickerSheet>;
 }
 
-function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minimumTime, maximumTime, onClose, onConfirm }: { visible: boolean; value: string; date: string; locale: Locale; timeZone: TimeZonePreference; colors: ReturnType<typeof themeFor>; minimumTime?: string; maximumTime?: string; onClose: () => void; onConfirm: (value: string) => void }) {
+function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minimumTime, maximumTime, maximumTimeInclusive = false, onClose, onConfirm }: { visible: boolean; value: string; date: string; locale: Locale; timeZone: TimeZonePreference; colors: ReturnType<typeof themeFor>; minimumTime?: string; maximumTime?: string; maximumTimeInclusive?: boolean; onClose: () => void; onConfirm: (value: string) => void }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
   const initial = splitTime(value);
   const [hour, setHour] = useState(initial.hour);
@@ -325,9 +325,22 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minim
   const latestTime = date === today ? currentTimeInTimeZone(timeZone) : "23:59";
   const allowedTimes = useMemo(() => HOURS.flatMap((candidateHour) => MINUTES.map((candidateMinute) => `${candidateHour}:${candidateMinute}`)).filter((candidate) => {
     if (date > today || (date === today && candidate > latestTime)) return false;
-    return (!minimumTime || candidate > minimumTime) && (!maximumTime || candidate < maximumTime);
-  }), [date, latestTime, maximumTime, minimumTime, today]);
+    return (!minimumTime || candidate > minimumTime) && (!maximumTime || (maximumTimeInclusive ? candidate <= maximumTime : candidate < maximumTime));
+  }), [date, latestTime, maximumTime, maximumTimeInclusive, minimumTime, today]);
   const allowedTimeSet = useMemo(() => new Set(allowedTimes), [allowedTimes]);
+  useEffect(() => {
+    if (!visible || allowedTimes.length === 0) return;
+    const current = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+    if (allowedTimeSet.has(current)) return;
+    const currentHour = String(hour).padStart(2, "0");
+    const fallback = allowedTimes.filter((candidate) => candidate.startsWith(`${currentHour}:`)).at(-1) ?? allowedTimes.at(-1);
+    if (!fallback) return;
+    const [fallbackHour, fallbackMinute] = fallback.split(":").map(Number);
+    hourRef.current = fallbackHour;
+    minuteRef.current = fallbackMinute;
+    setHour(fallbackHour);
+    setMinute(fallbackMinute);
+  }, [allowedTimeSet, allowedTimes, hour, minute, visible]);
   const isAllowed = (candidateHour: string, candidateMinute: string) => allowedTimeSet.has(`${candidateHour}:${candidateMinute}`);
   const hours = useMemo(() => HOURS.filter((candidateHour) => allowedTimes.some((candidate) => candidate.startsWith(`${candidateHour}:`))), [allowedTimes]);
   const allowedHours = hours.length ? hours : HOURS;
