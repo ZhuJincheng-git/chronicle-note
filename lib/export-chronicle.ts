@@ -4,16 +4,22 @@ import * as Sharing from "expo-sharing";
 
 import { buildExport, type ChronicleEntry, type Locale, type TimeZonePreference } from "@/lib/chronicle";
 
-export async function exportChronicle(entries: ChronicleEntry[], locale: Locale, timeZone: TimeZonePreference, shareTitle: string): Promise<boolean> {
-  const content = buildExport(entries, locale, timeZone);
+export type ExportFormat = "text" | "json";
+
+export async function exportChronicle(entries: ChronicleEntry[], locale: Locale, timeZone: TimeZonePreference, shareTitle: string, format: ExportFormat = "text"): Promise<boolean> {
+  const content = format === "json"
+    ? JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), timeZone, entries }, null, 2)
+    : buildExport(entries, locale, timeZone);
+  const extension = format === "json" ? "json" : "txt";
+  const mimeType = format === "json" ? "application/json" : "text/plain";
 
   if (Platform.OS === "web") {
     if (typeof document === "undefined") return false;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `chronicle-${new Date().toISOString().slice(0, 10)}.txt`;
+    link.download = `chronicle-${new Date().toISOString().slice(0, 10)}.${extension}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -24,12 +30,12 @@ export async function exportChronicle(entries: ChronicleEntry[], locale: Locale,
   const isAvailable = await Sharing.isAvailableAsync();
   if (!isAvailable || !FileSystem.cacheDirectory) return false;
 
-  const fileUri = `${FileSystem.cacheDirectory}chronicle-${new Date().toISOString().slice(0, 10)}.txt`;
+  const fileUri = `${FileSystem.cacheDirectory}chronicle-${new Date().toISOString().slice(0, 10)}.${extension}`;
   await FileSystem.writeAsStringAsync(fileUri, content, { encoding: FileSystem.EncodingType.UTF8 });
   await Sharing.shareAsync(fileUri, {
     dialogTitle: shareTitle,
-    mimeType: "text/plain",
-    UTI: "public.plain-text",
+    mimeType,
+    UTI: format === "json" ? "public.json" : "public.plain-text",
   });
   return true;
 }

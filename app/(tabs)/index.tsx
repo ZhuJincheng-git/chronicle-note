@@ -7,7 +7,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
-  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -86,10 +85,6 @@ export default function HomeScreen() {
   const [startTime, setStartTime] = useState(currentTimeInTimeZone(timeZone));
   const [endTime, setEndTime] = useState(currentTimeInTimeZone(timeZone));
   const [isRange, setIsRange] = useState(false);
-  const [activeDateIndex, setActiveDateIndex] = useState(0);
-  const [dateIndexHeight, setDateIndexHeight] = useState(0);
-  const timelineRef = useRef<SectionList<ChronicleEntry, TimelineSection> | null>(null);
-  const activeDateIndexRef = useRef(0);
 
   const isDark = theme === "dark";
   const colors = themeFor(isDark);
@@ -105,35 +100,6 @@ export default function HomeScreen() {
     });
     return [...grouped.values()];
   }, [entries, timeZone]);
-
-  const updateActiveDateIndex = (index: number) => {
-    if (!sections.length) return;
-    const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
-    if (nextIndex === activeDateIndexRef.current) return;
-    activeDateIndexRef.current = nextIndex;
-    setActiveDateIndex(nextIndex);
-    if (hapticsEnabled) haptic.selection();
-  };
-
-  const scrollToDate = (index: number) => {
-    if (!sections.length) return;
-    const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
-    updateActiveDateIndex(nextIndex);
-    timelineRef.current?.scrollToLocation({ sectionIndex: nextIndex, itemIndex: 0, viewPosition: 0 });
-  };
-
-  const moveDateIndex = (locationY: number) => {
-    if (!sections.length || !dateIndexHeight) return;
-    const nextIndex = Math.round((locationY / dateIndexHeight) * (sections.length - 1));
-    if (nextIndex !== activeDateIndexRef.current) scrollToDate(nextIndex);
-  };
-
-  const dateIndexResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => sections.length > 1,
-    onMoveShouldSetPanResponder: () => sections.length > 1,
-    onPanResponderGrant: (event) => moveDateIndex(event.nativeEvent.locationY),
-    onPanResponderMove: (event) => moveDateIndex(event.nativeEvent.locationY),
-  });
 
   const openEditor = () => {
     const nowDate = currentDateInTimeZone(timeZone);
@@ -175,9 +141,9 @@ export default function HomeScreen() {
     setDeleteTarget(null);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: "text" | "json") => {
     try {
-      const shared = await exportChronicle(entries, locale, timeZone, copy("shareTitle"));
+      const shared = await exportChronicle(entries, locale, timeZone, copy("shareTitle"), format);
       if (!shared) Alert.alert(copy("exportUnavailable"));
       else haptic.success();
     } catch {
@@ -223,7 +189,6 @@ export default function HomeScreen() {
         </View>
 
         <SectionList
-          ref={timelineRef}
           sections={sections}
           renderItem={renderEntry}
           keyExtractor={(item) => item.id}
@@ -232,9 +197,6 @@ export default function HomeScreen() {
           ListHeaderComponent={<Text style={[styles.timelineTitle, { color: colors.text }]}>{copy("timeline")}</Text>}
           renderSectionHeader={({ section }) => <View style={{ marginHorizontal: -20, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, backgroundColor: colors.background }}><View style={[styles.dayHeader, { marginTop: 0, marginBottom: 0 }]}><Text style={[styles.dayText, { color: colors.text }]}>{formatDay(section.iso, locale, timeZone)}</Text><View style={[styles.dayLine, { backgroundColor: colors.line }]} /></View></View>}
           stickySectionHeadersEnabled
-          onViewableItemsChanged={({ viewableItems }) => { const firstEntry = viewableItems.find((item) => item.item); if (firstEntry?.item) { const index = sections.findIndex((section) => section.data.some((entry) => entry.id === firstEntry.item.id)); if (index >= 0) updateActiveDateIndex(index); } }}
-          viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
-          onScrollToIndexFailed={({ index }) => setTimeout(() => timelineRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, animated: true }), 80)}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}><MaterialIcons name="schedule" size={34} color={colors.text} /></View>
@@ -245,8 +207,6 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        {sections.length > 1 ? <View {...dateIndexResponder.panHandlers} onLayout={(event) => setDateIndexHeight(event.nativeEvent.layout.height)} style={{ position: "absolute", zIndex: 30, right: 5, top: 144, bottom: 86, justifyContent: "center", alignItems: "center", width: 34 }}><View style={{ alignItems: "center", justifyContent: "center" }}>{[0, 1, 2, 3, 4].map((dotIndex) => { const activeDotIndex = Math.round((activeDateIndex / Math.max(sections.length - 1, 1)) * 4); const isActive = dotIndex === activeDotIndex; return <View key={dotIndex} style={{ width: isActive ? 9 : 5, height: isActive ? 9 : 5, borderRadius: 6, backgroundColor: isActive ? colors.text : colors.muted, opacity: isActive ? 1 : 0.55, marginVertical: isActive ? 7 : 4 }} />; })}</View></View> : null}
-
         <Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse, bottom: 16, zIndex: 100, elevation: 100 }, pressed && styles.pressedMain]}>
           <MaterialIcons name="add" size={22} color={colors.background} />
           <Text style={[styles.recordButtonText, { color: colors.background }]}>{copy("add")}</Text>
@@ -256,7 +216,7 @@ export default function HomeScreen() {
       <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={setIsRange} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
       <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
-      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={handleExport} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); Alert.alert(copy("export"), undefined, [{ text: "TXT (.txt)", onPress: () => handleExport("text") }, { text: "JSON (.json)", onPress: () => handleExport("json") }, { text: copy("cancel"), style: "cancel" }]); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
       <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => { setLanguageOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); setSettingsOpen(true); }} />
       <TimeZoneSheet visible={timeZoneOpen} colors={colors} locale={locale} selected={timeZone} onClose={() => { setTimeZoneOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setTimeZone(value); setTimeZoneOpen(false); setSettingsOpen(true); }} />
       <ConfirmSheet visible={Boolean(deleteTarget)} colors={colors} locale={locale} isAll={deleteTarget === "all"} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
