@@ -238,13 +238,14 @@ function EditorSheet({ visible, colors, locale, date, text, startTime, endTime, 
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.modalRoot}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalRoot}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+        <View style={[styles.sheet, { backgroundColor: colors.background, maxHeight: "94%" }]}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 4 }}>
           <View style={[styles.handle, { backgroundColor: colors.line }]} />
           <View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("newRecord")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View>
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>{copy("activity")}</Text>
-          <TextInput value={text} onChangeText={onTextChange} placeholder={copy("activityPlaceholder")} placeholderTextColor={colors.muted} multiline autoFocus maxLength={300} style={[styles.activityInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.line }]} />
+          <TextInput value={text} onChangeText={onTextChange} placeholder={copy("activityPlaceholder")} placeholderTextColor={colors.muted} multiline maxLength={300} style={[styles.activityInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.line }]} />
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>{copy("date")}</Text>
           <Pressable onPress={() => { haptic.light(); onDatePress(); }} style={({ pressed }) => [styles.selectorButton, { backgroundColor: colors.surface, borderColor: colors.line }, pressed && styles.pressedIcon]}>
             <View style={styles.selectorLeading}><MaterialIcons name="calendar-today" size={18} color={colors.text} /><Text style={[styles.selectorValue, { color: colors.text }]}>{date}</Text></View>
@@ -260,6 +261,7 @@ function EditorSheet({ visible, colors, locale, date, text, startTime, endTime, 
             {isRange ? <TimeTrigger label={copy("endTime")} value={endTime} colors={colors} onPress={onEndPress} /> : null}
           </View>
           <Pressable onPress={onSave} style={({ pressed }) => [styles.saveButton, { backgroundColor: colors.inverse }, pressed && styles.pressedMain]}><Text style={[styles.saveText, { color: colors.background }]}>{copy("save")}</Text></Pressable>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -290,15 +292,16 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClo
   const initial = splitTime(value);
   const [hour, setHour] = useState(initial.hour);
   const [minute, setMinute] = useState(initial.minute);
-  useEffect(() => { if (visible) { const parts = splitTime(value); setHour(parts.hour); setMinute(parts.minute); } }, [value, visible]);
-  const selected = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const hourRef = useRef(initial.hour);
+  const minuteRef = useRef(initial.minute);
+  useEffect(() => { if (visible) { const parts = splitTime(value); hourRef.current = parts.hour; minuteRef.current = parts.minute; setHour(parts.hour); setMinute(parts.minute); } }, [value, visible]);
   const isAllowed = (candidateHour: string, candidateMinute: string) => isPastOrNow(date, `${candidateHour}:${candidateMinute}`, timeZone);
   const hours = HOURS.filter((candidateHour) => isAllowed(candidateHour, "00"));
   const allowedHours = hours.length ? hours : HOURS;
   const minutes = MINUTES.filter((candidateMinute) => isAllowed(String(hour).padStart(2, "0"), candidateMinute));
   const allowedMinutes = minutes.length ? minutes : MINUTES;
-  const confirm = () => { if (isPastOrNow(date, selected, timeZone)) onConfirm(selected); };
-  return <PickerSheet visible={visible} colors={colors} title={copy("selectTime")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={allowedHours} selected={String(hour).padStart(2, "0")} onSelect={(next) => { setHour(Number(next)); const firstMinute = MINUTES.find((candidate) => isAllowed(next, candidate)); if (firstMinute && !isAllowed(next, String(minute).padStart(2, "0"))) setMinute(Number(firstMinute)); }} colors={colors} /><Text style={[styles.wheelDivider, { color: colors.muted }]}>:</Text><WheelColumn values={allowedMinutes} selected={String(minute).padStart(2, "0")} onSelect={(next) => setMinute(Number(next))} colors={colors} /></PickerSheet>;
+  const confirm = () => { const finalValue = `${String(hourRef.current).padStart(2, "0")}:${String(minuteRef.current).padStart(2, "0")}`; if (isPastOrNow(date, finalValue, timeZone)) onConfirm(finalValue); };
+  return <PickerSheet visible={visible} colors={colors} title={copy("selectTime")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={allowedHours} selected={String(hour).padStart(2, "0")} onSelect={(next) => { const nextHour = Number(next); hourRef.current = nextHour; setHour(nextHour); const firstMinute = MINUTES.find((candidate) => isAllowed(next, candidate)); if (firstMinute && !isAllowed(next, String(minuteRef.current).padStart(2, "0"))) { minuteRef.current = Number(firstMinute); setMinute(Number(firstMinute)); } }} colors={colors} /><Text style={[styles.wheelDivider, { color: colors.muted }]}>:</Text><WheelColumn values={allowedMinutes} selected={String(minute).padStart(2, "0")} onSelect={(next) => { minuteRef.current = Number(next); setMinute(Number(next)); }} colors={colors} /></PickerSheet>;
 }
 
 function PickerSheet({ visible, colors, title, done, onClose, onConfirm, children }: { visible: boolean; colors: ReturnType<typeof themeFor>; title: string; done: string; onClose: () => void; onConfirm: () => void; children: React.ReactNode }) {
