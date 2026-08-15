@@ -192,11 +192,21 @@ export function isValidTime(value: string): boolean {
 }
 
 export function getSystemTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
 }
 
 export function resolveTimeZone(preference: TimeZonePreference): string {
-  return preference === "system" ? getSystemTimeZone() : preference;
+  const candidate = preference === "system" ? getSystemTimeZone() : preference;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: candidate }).format();
+    return candidate;
+  } catch {
+    return "UTC";
+  }
 }
 
 export function getZonedParts(iso: string | Date, timeZone: TimeZonePreference): { year: number; month: number; day: number; hour: number; minute: number } {

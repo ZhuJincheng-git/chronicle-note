@@ -43,9 +43,9 @@ type DeleteTarget = ChronicleEntry | "all" | null;
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
-const TIME_ZONES = typeof (Intl as typeof Intl & { supportedValuesOf?: (key: "timeZone") => string[] }).supportedValuesOf === "function"
-  ? Array.from(new Set(["UTC", getSystemTimeZone(), ...(Intl as typeof Intl & { supportedValuesOf: (key: "timeZone") => string[] }).supportedValuesOf("timeZone")])).sort()
-  : ["UTC", getSystemTimeZone(), "Asia/Shanghai", "Asia/Tokyo", "Asia/Singapore", "Europe/London", "Europe/Paris", "America/Los_Angeles", "America/New_York"];
+const TIME_ZONES = [
+  "UTC", "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow", "Africa/Cairo", "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Bangkok", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Taipei", "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Sydney", "Pacific/Auckland",
+];
 
 function themeFor(isDark: boolean) {
   return isDark
@@ -164,7 +164,7 @@ export default function HomeScreen() {
       <View style={styles.timelineRow}>
         <Text style={[styles.timeText, { color: colors.muted }]}>{time}</Text>
         <View style={[styles.dot, { backgroundColor: colors.text }]} />
-        <Animated.View entering={FadeInDown.duration(220)} style={[styles.entryCard, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>
+        <Animated.View entering={Platform.OS === "web" ? undefined : FadeInDown.duration(220)} style={[styles.entryCard, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>
           <Text style={[styles.entryText, { color: colors.text }]}>{entry.text}</Text>
           <Pressable accessibilityLabel={copy("delete")} onPress={() => { haptic.light(); setDeleteTarget(entry); }} hitSlop={12} style={({ pressed }) => [styles.moreButton, pressed && styles.pressedIcon]}>
             <MaterialIcons name="more-horiz" size={22} color={colors.muted} />
