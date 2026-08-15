@@ -22,6 +22,7 @@ import { dateKey, formatDay, formatTime, isValidTime, t, type ChronicleEntry, ty
 import { useChronicle } from "@/lib/chronicle-store";
 import { exportChronicle } from "@/lib/export-chronicle";
 import { haptic } from "@/lib/haptics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TimelineItem = { type: "day"; key: string; iso: string } | { type: "entry"; key: string; entry: ChronicleEntry };
 type DeleteTarget = ChronicleEntry | "all" | null;
@@ -39,6 +40,7 @@ function themeFor(isDark: boolean) {
 
 export default function HomeScreen() {
   const { entries, locale, theme, isReady, addEntry, deleteEntry, clearEntries, setLocale, setTheme } = useChronicle();
+  const insets = useSafeAreaInsets();
   const [editorOpen, setEditorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
@@ -168,7 +170,7 @@ export default function HomeScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.key}
           style={styles.list}
-          contentContainerStyle={items.length ? styles.listContent : styles.emptyListContent}
+          contentContainerStyle={[items.length ? styles.listContent : styles.emptyListContent, { paddingBottom: Math.max(insets.bottom + 108, 128) }]}
           ListHeaderComponent={<Text style={[styles.timelineTitle, { color: colors.text }]}>{copy("timeline")}</Text>}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -182,7 +184,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        <Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse }, pressed && styles.pressedMain]}>
+        <Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse, bottom: Math.max(insets.bottom + 16, 28) }, pressed && styles.pressedMain]}>
           <MaterialIcons name="add" size={22} color={colors.background} />
           <Text style={[styles.recordButtonText, { color: colors.background }]}>{copy("add")}</Text>
         </Pressable>
@@ -314,21 +316,27 @@ function SettingsSheet({ visible, colors, locale, isDark, entriesCount, onClose,
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>{copy("language")}</Text>
           <View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>
             {languages.map((language, index) => (
-              <Pressable key={language.key} onPress={() => onLocaleChange(language.key)} style={({ pressed }) => [styles.languageRow, index < languages.length - 1 && { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}>
-                <Text style={[styles.settingText, { color: colors.text }]}>{language.label}</Text>
-                {locale === language.key ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}
+              <Pressable key={language.key} onPress={() => onLocaleChange(language.key)} style={({ pressed }) => [styles.settingsRowTouch, index < languages.length - 1 && { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}>
+                <View style={styles.settingsRowContent}>
+                  <Text style={[styles.settingText, { color: colors.text }]}>{language.label}</Text>
+                  {locale === language.key ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}
+                </View>
               </Pressable>
             ))}
           </View>
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>DATA</Text>
           <View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>
-            <Pressable onPress={onExport} style={({ pressed }) => [styles.languageRow, { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}>
-              <View style={styles.settingLeading}><MaterialIcons name="ios-share" size={20} color={colors.text} /><Text style={[styles.settingText, { color: colors.text }]}>{copy("export")}</Text></View>
-              <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
+            <Pressable onPress={onExport} style={({ pressed }) => [styles.settingsRowTouch, { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}>
+              <View style={styles.settingsRowContent}>
+                <View style={styles.settingLeading}><MaterialIcons name="ios-share" size={20} color={colors.text} /><Text style={[styles.settingText, { color: colors.text }]}>{copy("export")}</Text></View>
+                <MaterialIcons name="chevron-right" size={20} color={colors.muted} />
+              </View>
             </Pressable>
-            <Pressable onPress={onClear} disabled={entriesCount === 0} style={({ pressed }) => [styles.languageRow, entriesCount === 0 && { opacity: 0.35 }, pressed && { opacity: 0.6 }]}>
-              <View style={styles.settingLeading}><MaterialIcons name="delete-outline" size={20} color={entriesCount ? "#FF453A" : colors.muted} /><Text style={[styles.settingText, { color: entriesCount ? "#FF453A" : colors.muted }]}>{copy("deleteAll")}</Text></View>
-              <Text style={[styles.entryCount, { color: colors.muted }]}>{entriesCount}</Text>
+            <Pressable onPress={onClear} disabled={entriesCount === 0} style={({ pressed }) => [styles.settingsRowTouch, entriesCount === 0 && { opacity: 0.35 }, pressed && { opacity: 0.6 }]}>
+              <View style={styles.settingsRowContent}>
+                <View style={styles.settingLeading}><MaterialIcons name="delete-outline" size={20} color={entriesCount ? "#FF453A" : colors.muted} /><Text style={[styles.settingText, { color: entriesCount ? "#FF453A" : colors.muted }]}>{copy("deleteAll")}</Text></View>
+                <Text style={[styles.entryCount, { color: colors.muted }]}>{entriesCount}</Text>
+              </View>
             </Pressable>
           </View>
           <Text style={[styles.privacy, { color: colors.muted }]}>{copy("privacy")}</Text>
@@ -359,7 +367,7 @@ function ConfirmSheet({ visible, colors, locale, isAll, onClose, onConfirm }: { 
 }
 
 const styles: Record<string, any> = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: 20 },
+  screen: { flex: 1, position: "relative", paddingHorizontal: 20 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 14, paddingBottom: 18 },
   wordmark: { fontSize: 34, lineHeight: 39, fontWeight: "800", letterSpacing: -1.15 },
   subtitle: { marginTop: 3, fontSize: 14, fontWeight: "500" },
@@ -381,7 +389,7 @@ const styles: Record<string, any> = StyleSheet.create({
   emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 18 },
   emptyTitle: { fontSize: 19, fontWeight: "700", letterSpacing: -0.25 },
   emptySubtitle: { marginTop: 7, fontSize: 15, textAlign: "center" },
-  recordButton: { position: "absolute", right: 20, bottom: 24, height: 54, borderRadius: 27, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 7, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  recordButton: { position: "absolute", right: 20, height: 54, borderRadius: 27, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 7, zIndex: 20, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
   recordButtonText: { fontSize: 16, fontWeight: "700" },
   pressedMain: { transform: [{ scale: 0.97 }], opacity: 0.92 },
   pressedIcon: { opacity: 0.6 },
@@ -409,7 +417,8 @@ const styles: Record<string, any> = StyleSheet.create({
   settingRow: { minHeight: 53, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   settingLeading: { flexDirection: "row", alignItems: "center", gap: 11 },
   settingText: { fontSize: 16, fontWeight: "500" },
-  languageRow: { minHeight: 51, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  settingsRowTouch: { width: "100%" },
+  settingsRowContent: { minHeight: 52, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   entryCount: { fontSize: 15, fontWeight: "600", fontVariant: ["tabular-nums"] },
   privacy: { textAlign: "center", fontSize: 13, lineHeight: 18, paddingHorizontal: 22 },
   confirmRoot: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28 },
