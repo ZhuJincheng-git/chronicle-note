@@ -44,6 +44,13 @@ type DeleteTarget = ChronicleEntry | "all" | null;
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
+function previousMinute(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+  const total = hours * 60 + minutes;
+  if (total === 0) return time;
+  const next = total - 1;
+  return `${String(Math.floor(next / 60)).padStart(2, "0")}:${String(next % 60).padStart(2, "0")}`;
+}
 const LANGUAGE_OPTIONS: Record<Locale, string> = { zh: "简体中文", en: "English", ja: "日本語", ko: "한국어", es: "Español", fr: "Français", de: "Deutsch" };
 const TIME_ZONES = [
   "UTC", "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow", "Africa/Cairo", "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Bangkok", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Taipei", "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Sydney", "Pacific/Auckland",
@@ -216,9 +223,9 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={setIsRange} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
+      <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={(next) => { if (next && startTime >= endTime) setStartTime(previousMinute(endTime)); setIsRange(next); }} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
-      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
+      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} minimumTime={timePickerTarget === "end" && isRange ? startTime : undefined} maximumTime={timePickerTarget === "start" && isRange ? endTime : undefined} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
       <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); setExportFormatOpen(true); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
       <ExportFormatSheet visible={exportFormatOpen} colors={colors} locale={locale} onClose={() => { setExportFormatOpen(false); setSettingsOpen(true); }} onSelect={(format) => { setExportFormatOpen(false); handleExport(format); }} />
       <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => { setLanguageOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); setSettingsOpen(true); }} />
@@ -292,7 +299,7 @@ function DatePickerSheet({ visible, value, locale, timeZone, colors, onClose, on
   return <PickerSheet visible={visible} colors={colors} title={copy("chooseDate")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={years.map(String)} selected={String(year)} onSelect={(next) => { const nextYear = Number(next); yearRef.current = nextYear; const nextMonth = Math.min(monthRef.current, nextYear === now.year ? now.month : 12); monthRef.current = nextMonth; setYear(nextYear); setMonth(nextMonth); }} colors={colors} /><WheelColumn values={months.map((item) => String(item).padStart(2, "0"))} selected={String(month).padStart(2, "0")} onSelect={(next) => { monthRef.current = Number(next); setMonth(Number(next)); }} colors={colors} /><WheelColumn values={days.map((item) => String(item).padStart(2, "0"))} selected={String(Math.min(day, days.length)).padStart(2, "0")} onSelect={(next) => { dayRef.current = Number(next); setDay(Number(next)); }} colors={colors} /></PickerSheet>;
 }
 
-function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClose, onConfirm }: { visible: boolean; value: string; date: string; locale: Locale; timeZone: TimeZonePreference; colors: ReturnType<typeof themeFor>; onClose: () => void; onConfirm: (value: string) => void }) {
+function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minimumTime, maximumTime, onClose, onConfirm }: { visible: boolean; value: string; date: string; locale: Locale; timeZone: TimeZonePreference; colors: ReturnType<typeof themeFor>; minimumTime?: string; maximumTime?: string; onClose: () => void; onConfirm: (value: string) => void }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
   const initial = splitTime(value);
   const [hour, setHour] = useState(initial.hour);
@@ -300,8 +307,11 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClo
   const hourRef = useRef(initial.hour);
   const minuteRef = useRef(initial.minute);
   useEffect(() => { if (visible) { const parts = splitTime(value); hourRef.current = parts.hour; minuteRef.current = parts.minute; setHour(parts.hour); setMinute(parts.minute); } }, [value, visible]);
-  const isAllowed = (candidateHour: string, candidateMinute: string) => isPastOrNow(date, `${candidateHour}:${candidateMinute}`, timeZone);
-  const hours = HOURS.filter((candidateHour) => isAllowed(candidateHour, "00"));
+  const isAllowed = (candidateHour: string, candidateMinute: string) => {
+    const candidate = `${candidateHour}:${candidateMinute}`;
+    return isPastOrNow(date, candidate, timeZone) && (!minimumTime || candidate > minimumTime) && (!maximumTime || candidate < maximumTime);
+  };
+  const hours = HOURS.filter((candidateHour) => MINUTES.some((candidateMinute) => isAllowed(candidateHour, candidateMinute)));
   const allowedHours = hours.length ? hours : HOURS;
   const minutes = MINUTES.filter((candidateMinute) => isAllowed(String(hour).padStart(2, "0"), candidateMinute));
   const allowedMinutes = minutes.length ? minutes : MINUTES;
