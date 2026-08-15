@@ -43,6 +43,7 @@ type DeleteTarget = ChronicleEntry | "all" | null;
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
+const LANGUAGE_OPTIONS: Record<Locale, string> = { zh: "简体中文", en: "English", ja: "日本語", ko: "한국어", es: "Español", fr: "Français", de: "Deutsch" };
 const TIME_ZONES = [
   "UTC", "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow", "Africa/Cairo", "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Bangkok", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Taipei", "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Sydney", "Pacific/Auckland",
 ];
@@ -72,6 +73,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [editorOpen, setEditorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [timeZoneOpen, setTimeZoneOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [timePickerTarget, setTimePickerTarget] = useState<"start" | "end" | null>(null);
@@ -221,7 +223,8 @@ export default function HomeScreen() {
       <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={setEntryText} onRangeChange={setIsRange} onDatePress={() => setDatePickerOpen(true)} onStartPress={() => setTimePickerTarget("start")} onEndPress={() => setTimePickerTarget("end")} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => setDatePickerOpen(false)} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); }} />
       <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => setTimePickerTarget(null)} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); }} />
-      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onLocaleChange={(next) => { haptic.medium(); setLocale(next); }} onTimeZonePress={() => setTimeZoneOpen(true)} onExport={handleExport} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onLocaleChange={() => setLanguageOpen(true)} onTimeZonePress={() => setTimeZoneOpen(true)} onExport={handleExport} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => setLanguageOpen(false)} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); }} />
       <TimeZoneSheet visible={timeZoneOpen} colors={colors} locale={locale} selected={timeZone} onClose={() => setTimeZoneOpen(false)} onSelect={(value) => { haptic.medium(); setTimeZone(value); setTimeZoneOpen(false); }} />
       <ConfirmSheet visible={Boolean(deleteTarget)} colors={colors} locale={locale} isAll={deleteTarget === "all"} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
     </ScreenContainer>
@@ -299,16 +302,24 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClo
 }
 
 function PickerSheet({ visible, colors, title, done, onClose, onConfirm, children }: { visible: boolean; colors: ReturnType<typeof themeFor>; title: string; done: string; onClose: () => void; onConfirm: () => void; children: React.ReactNode }) {
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { backgroundColor: colors.surface, borderColor: colors.line }]}>{children}</View></View></View></Modal>;
+  const itemHeight = 46;
+  const panelHeight = 248;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { height: panelHeight, backgroundColor: colors.surface, borderColor: colors.line }]}>{children}<View pointerEvents="none" style={{ position: "absolute", left: 10, right: 10, top: (panelHeight - itemHeight) / 2, height: itemHeight, borderRadius: 16, backgroundColor: colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, pointerEvents: "none" }} /></View></View></View></Modal>;
 }
 
 function WheelColumn({ values, selected, onSelect, colors }: { values: string[]; selected: string; onSelect: (value: string) => void; colors: ReturnType<typeof themeFor> }) {
-  const itemHeight = 42;
-  const viewportHeight = 210;
+  const itemHeight = 46;
+  const viewportHeight = 248;
+  const valuesKey = values.join("|");
   const scrollRef = useRef<ScrollView>(null);
-  const selectCenteredValue = (offsetY: number) => {
+  const scrollToSelection = (animated = false) => {
+    const index = Math.max(0, values.indexOf(selected));
+    scrollRef.current?.scrollTo({ y: index * itemHeight, animated });
+  };
+  const commitOffset = (offsetY: number) => {
     const index = Math.max(0, Math.min(values.length - 1, Math.round(offsetY / itemHeight)));
     const next = values[index];
+    scrollRef.current?.scrollTo({ y: index * itemHeight, animated: true });
     if (next && next !== selected) {
       haptic.selection();
       onSelect(next);
@@ -316,36 +327,19 @@ function WheelColumn({ values, selected, onSelect, colors }: { values: string[];
   };
 
   useEffect(() => {
-    const index = Math.max(0, values.indexOf(selected));
-    const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: index * itemHeight, animated: false }), 0);
+    const index = Math.max(0, valuesKey.split("|").indexOf(selected));
+    const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: index * itemHeight, animated: false }), 40);
     return () => clearTimeout(timer);
-  }, [selected, values]);
+  }, [selected, valuesKey]);
 
-  return (
-    <View style={{ width: 90, height: viewportHeight, overflow: "hidden" }}>
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled
-        snapToInterval={itemHeight}
-        snapToAlignment="center"
-        decelerationRate="fast"
-        onMomentumScrollEnd={(event) => selectCenteredValue(event.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={(event) => selectCenteredValue(event.nativeEvent.contentOffset.y)}
-        contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}
-      >
-        {values.map((value) => <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: value === selected ? colors.text : colors.muted }]}>{value}</Text></View>)}
-      </ScrollView>
-      <View pointerEvents="none" style={{ position: "absolute", left: 7, right: 7, top: (viewportHeight - itemHeight) / 2, height: itemHeight, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, backgroundColor: colors.elevated, opacity: 0.92 }} />
-    </View>
-  );
+  return <View style={{ width: 92, height: viewportHeight, overflow: "hidden" }}><ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} nestedScrollEnabled snapToInterval={itemHeight} disableIntervalMomentum decelerationRate="fast" scrollEventThrottle={16} onLayout={() => scrollToSelection(false)} onMomentumScrollEnd={(event) => commitOffset(event.nativeEvent.contentOffset.y)} onScrollEndDrag={(event) => { if (!event.nativeEvent.velocity?.y) commitOffset(event.nativeEvent.contentOffset.y); }} contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}>{values.map((value) => { const isSelected = value === selected; return <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: isSelected ? colors.text : colors.muted, fontSize: isSelected ? 30 : 21, fontWeight: isSelected ? "800" : "500", opacity: isSelected ? 1 : 0.68 }]}>{value}</Text></View>; })}</ScrollView></View>;
 }
 
 function SettingsSheet({ visible, colors, locale, isDark, entriesCount, timeZone, onClose, onThemeChange, onLocaleChange, onTimeZonePress, onExport, onClear }: {
   visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; isDark: boolean; entriesCount: number; timeZone: TimeZonePreference; onClose: () => void; onThemeChange: (value: boolean) => void; onLocaleChange: (value: Locale) => void; onTimeZonePress: () => void; onExport: () => void; onClear: () => void;
 }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
-  const languages: { key: Locale; label: string }[] = [{ key: "zh", label: "简体中文" }, { key: "en", label: "English" }, { key: "ja", label: "日本語" }, { key: "ko", label: "한국어" }, { key: "es", label: "Español" }, { key: "fr", label: "Français" }, { key: "de", label: "Deutsch" }];
+  const languages: { key: Locale; label: string }[] = [{ key: locale, label: LANGUAGE_OPTIONS[locale] }];
   const zoneLabel = timeZone === "system" ? `${copy("systemTimeZone")} · ${getSystemTimeZone()}` : timeZone;
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><ScrollView style={[styles.settingsSheet, { backgroundColor: colors.background }]} contentContainerStyle={styles.settingsSheetContent} showsVerticalScrollIndicator={false}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("settings")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><Text style={[styles.sectionLabel, { color: colors.muted }]}>{copy("appearance")}</Text><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}><View style={styles.settingRow}><View style={styles.settingLeading}><MaterialIcons name={isDark ? "dark-mode" : "light-mode"} size={20} color={colors.text} /><Text style={[styles.settingText, { color: colors.text }]}>{copy("darkMode")}</Text></View><Switch value={isDark} onValueChange={onThemeChange} trackColor={{ false: "#D1D1D6", true: "#6E6E73" }} thumbColor="#FFFFFF" /></View></View><Text style={[styles.sectionLabel, { color: colors.muted }]}>{copy("language")}</Text><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>{languages.map((language, index) => <Pressable key={language.key} onPress={() => onLocaleChange(language.key)} style={({ pressed }) => [styles.settingsRowTouch, index < languages.length - 1 && { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}><View style={styles.settingsRowContent}><Text style={[styles.settingText, { color: colors.text }]}>{language.label}</Text>{locale === language.key ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</View></Pressable>)}</View><Text style={[styles.sectionLabel, { color: colors.muted }]}>{copy("timeZone")}</Text><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}><Pressable onPress={onTimeZonePress} style={({ pressed }) => [styles.settingsRowTouch, pressed && { opacity: 0.6 }]}><View style={styles.settingsRowContent}><View style={styles.settingLeading}><MaterialIcons name="public" size={20} color={colors.text} /><View style={styles.timeZoneTextWrap}><Text style={[styles.settingText, { color: colors.text }]}>{copy("timeZone")}</Text><Text numberOfLines={1} style={[styles.timeZoneValue, { color: colors.muted }]}>{zoneLabel}</Text></View></View><MaterialIcons name="chevron-right" size={20} color={colors.muted} /></View></Pressable></View><Text style={[styles.sectionLabel, { color: colors.muted }]}>{copy("data")}</Text><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}><Pressable onPress={onExport} style={({ pressed }) => [styles.settingsRowTouch, { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.6 }]}><View style={styles.settingsRowContent}><View style={styles.settingLeading}><MaterialIcons name="ios-share" size={20} color={colors.text} /><Text style={[styles.settingText, { color: colors.text }]}>{copy("export")}</Text></View><MaterialIcons name="chevron-right" size={20} color={colors.muted} /></View></Pressable><Pressable onPress={onClear} disabled={entriesCount === 0} style={({ pressed }) => [styles.settingsRowTouch, entriesCount === 0 && { opacity: 0.35 }, pressed && { opacity: 0.6 }]}><View style={styles.settingsRowContent}><View style={styles.settingLeading}><MaterialIcons name="delete-outline" size={20} color={entriesCount ? "#FF453A" : colors.muted} /><Text style={[styles.settingText, { color: entriesCount ? "#FF453A" : colors.muted }]}>{copy("deleteAll")}</Text></View><Text style={[styles.entryCount, { color: colors.muted }]}>{entriesCount}</Text></View></Pressable></View><Text style={[styles.privacy, { color: colors.muted }]}>{copy("privacy")}</Text><Text style={[styles.timeZoneHint, { color: colors.muted }]}>{copy("timeZoneHint")}</Text></ScrollView></View></Modal>;
 }
@@ -357,6 +351,11 @@ function TimeZoneSheet({ visible, colors, locale, selected, onClose, onSelect }:
   const zones = useMemo(() => Array.from(new Set(TIME_ZONES)).filter((zone) => zone.toLowerCase().includes(query.trim().toLowerCase())), [query]);
   const renderZone = ({ item }: ListRenderItemInfo<string>) => <Pressable onPress={() => onSelect(item)} style={({ pressed }) => [styles.timeZoneRow, { borderBottomColor: colors.line }, pressed && { opacity: 0.6 }]}><Text style={[styles.timeZoneRowText, { color: colors.text }]}>{item}</Text>{selected === item ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</Pressable>;
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.timeZoneSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("timeZone")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><TextInput value={query} onChangeText={setQuery} placeholder={copy("timeZone")} placeholderTextColor={colors.muted} autoCapitalize="none" style={[styles.timeZoneSearch, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]} /><Pressable onPress={() => onSelect("system")} style={({ pressed }) => [styles.systemZoneRow, { backgroundColor: colors.surface, borderColor: colors.line }, pressed && { opacity: 0.6 }]}><View><Text style={[styles.settingText, { color: colors.text }]}>{copy("systemTimeZone")}</Text><Text style={[styles.timeZoneValue, { color: colors.muted }]}>{getSystemTimeZone()}</Text></View>{selected === "system" ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</Pressable><FlatList data={zones} keyExtractor={(item) => item} renderItem={renderZone} style={[styles.timeZoneList, { borderColor: colors.line }]} showsVerticalScrollIndicator={false} /></View></View></Modal>;
+}
+
+function LanguageSheet({ visible, colors, locale, onClose, onSelect }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; onClose: () => void; onSelect: (value: Locale) => void }) {
+  const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("language")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: colors.line }]}>{(Object.keys(LANGUAGE_OPTIONS) as Locale[]).map((key, index, options) => <Pressable key={key} onPress={() => onSelect(key)} style={({ pressed }) => [styles.settingsRowTouch, index < options.length - 1 && { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && styles.pressedIcon]}><View style={styles.settingsRowContent}><Text style={[styles.settingText, { color: colors.text }]}>{LANGUAGE_OPTIONS[key]}</Text>{key === locale ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</View></Pressable>)}</View></View></View></Modal>;
 }
 
 function ConfirmSheet({ visible, colors, locale, isAll, onClose, onConfirm }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; isAll: boolean; onClose: () => void; onConfirm: () => void }) {
