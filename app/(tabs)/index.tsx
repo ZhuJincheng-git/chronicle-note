@@ -74,6 +74,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [editorOpen, setEditorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exportFormatOpen, setExportFormatOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [timeZoneOpen, setTimeZoneOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -121,11 +122,13 @@ export default function HomeScreen() {
       return;
     }
     if (!isPastOrNow(entryDate, startTime, timeZone) || (isRange && !isPastOrNow(entryDate, endTime, timeZone))) {
-      Alert.alert(copy("futureTime"));
+      setFormError(copy("futureTime"));
+      haptic.warning();
       return;
     }
     if (isRange && !isEndAfterStart(entryDate, startTime, endTime, timeZone)) {
-      Alert.alert(copy("invalidRange"));
+      setFormError(copy("invalidRange"));
+      haptic.warning();
       return;
     }
     await addEntry({ text: entryText, date: entryDate, startTime, endTime: isRange ? endTime : undefined });
@@ -216,7 +219,8 @@ export default function HomeScreen() {
       <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={setIsRange} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
       <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
-      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); Alert.alert(copy("export"), undefined, [{ text: "TXT (.txt)", onPress: () => handleExport("text") }, { text: "JSON (.json)", onPress: () => handleExport("json") }, { text: copy("cancel"), style: "cancel" }]); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); setExportFormatOpen(true); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <ExportFormatSheet visible={exportFormatOpen} colors={colors} locale={locale} onClose={() => { setExportFormatOpen(false); setSettingsOpen(true); }} onSelect={(format) => { setExportFormatOpen(false); handleExport(format); }} />
       <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => { setLanguageOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); setSettingsOpen(true); }} />
       <TimeZoneSheet visible={timeZoneOpen} colors={colors} locale={locale} selected={timeZone} onClose={() => { setTimeZoneOpen(false); setSettingsOpen(true); }} onSelect={(value) => { haptic.medium(); setTimeZone(value); setTimeZoneOpen(false); setSettingsOpen(true); }} />
       <ConfirmSheet visible={Boolean(deleteTarget)} colors={colors} locale={locale} isAll={deleteTarget === "all"} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
@@ -393,6 +397,12 @@ function LanguageSheet({ visible, colors, locale, onClose, onSelect }: { visible
 function ConfirmSheet({ visible, colors, locale, isAll, onClose, onConfirm }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; isAll: boolean; onClose: () => void; onConfirm: () => void }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
   return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}><View style={styles.confirmRoot}><Pressable style={styles.confirmBackdrop} onPress={onClose} /><View style={[styles.confirmCard, { backgroundColor: colors.elevated }]}><View style={[styles.warningIcon, { backgroundColor: colors.surface }]}><MaterialIcons name="delete-outline" size={26} color="#FF453A" /></View><Text style={[styles.confirmTitle, { color: colors.text }]}>{isAll ? copy("confirmClear") : copy("confirmDelete")}</Text><Text style={[styles.confirmHint, { color: colors.muted }]}>{isAll ? copy("clearHint") : copy("deleteOneHint")}</Text><View style={styles.confirmButtons}><Pressable onPress={onClose} style={({ pressed }) => [styles.cancelButton, { backgroundColor: colors.surface }, pressed && styles.pressedMain]}><Text style={[styles.cancelText, { color: colors.text }]}>{copy("cancel")}</Text></Pressable><Pressable onPress={onConfirm} style={({ pressed }) => [styles.deleteButton, pressed && styles.pressedMain]}><Text style={styles.deleteText}>{copy("delete")}</Text></Pressable></View></View></View></Modal>;
+}
+
+function ExportFormatSheet({ visible, colors, locale, onClose, onSelect }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; onClose: () => void; onSelect: (format: "text" | "json") => void }) {
+  const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
+  const option = (format: "text" | "json", icon: "description" | "data-object", label: string, detail: string) => <Pressable onPress={() => { haptic.medium(); onSelect(format); }} style={({ pressed }) => [{ minHeight: 72, paddingHorizontal: 14, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: StyleSheet.hairlineWidth }, pressed && styles.pressedMain]}><View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" }}><MaterialIcons name={icon} size={20} color={colors.text} /></View><View style={{ flex: 1 }}><Text style={[styles.settingText, { color: colors.text }]}>{label}</Text><Text style={[styles.timeZoneValue, { color: colors.muted }]}>{detail}</Text></View><MaterialIcons name="chevron-right" size={20} color={colors.muted} /></Pressable>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("export")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><View style={{ gap: 10 }}>{option("text", "description", "TXT", ".txt")}{option("json", "data-object", "JSON", ".json")}</View></View></View></Modal>;
 }
 
 const styles: Record<string, any> = StyleSheet.create({
