@@ -38,6 +38,7 @@ import {
 import { useChronicle } from "@/lib/chronicle-store";
 import { exportChronicle } from "@/lib/export-chronicle";
 import { haptic } from "@/lib/haptics";
+import { buildActivitySummary } from "@/lib/activity-stats";
 
 type TimelineSection = { data: ChronicleEntry[]; iso: string; key: string };
 type DeleteTarget = ChronicleEntry | "all" | null;
@@ -81,6 +82,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [editorOpen, setEditorOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [exportFormatOpen, setExportFormatOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [timeZoneOpen, setTimeZoneOpen] = useState(false);
@@ -108,6 +110,7 @@ export default function HomeScreen() {
     });
     return [...grouped.values()];
   }, [entries, timeZone]);
+  const activitySummary = useMemo(() => buildActivitySummary(entries, timeZone), [entries, timeZone]);
 
   const openEditor = () => {
     const nowDate = currentDateInTimeZone(timeZone);
@@ -193,9 +196,10 @@ export default function HomeScreen() {
             <Text style={[styles.wordmark, { color: colors.text }]}>{copy("appName")}</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>{copy("today")} · {entries.length} {copy("entries")}</Text>
           </View>
-          <Pressable accessibilityLabel={copy("settings")} onPress={() => { haptic.light(); setSettingsOpen(true); }} hitSlop={12} style={({ pressed }) => [styles.settingsButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}>
-            <MaterialIcons name="settings" size={20} color={colors.text} />
-          </Pressable>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable accessibilityLabel="Statistics" onPress={() => { haptic.light(); setStatsOpen(true); }} hitSlop={12} style={({ pressed }) => [styles.settingsButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="bar-chart" size={20} color={colors.text} /></Pressable>
+            <Pressable accessibilityLabel={copy("settings")} onPress={() => { haptic.light(); setSettingsOpen(true); }} hitSlop={12} style={({ pressed }) => [styles.settingsButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="settings" size={20} color={colors.text} /></Pressable>
+          </View>
         </View>
 
         <SectionList
@@ -224,6 +228,7 @@ export default function HomeScreen() {
       </View>
 
       <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={(next) => { if (next && startTime >= endTime) setStartTime(previousMinute(endTime)); setIsRange(next); }} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
+      <StatsSheet visible={statsOpen} colors={colors} locale={locale} summary={activitySummary} onClose={() => setStatsOpen(false)} />
       <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
       <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} minimumTime={timePickerTarget === "end" && isRange ? startTime : undefined} maximumTime={timePickerTarget === "start" && isRange ? endTime : undefined} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
       <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} hapticsEnabled={hapticsEnabled} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onHapticsChange={(next) => { if (next) haptic.medium(); setHapticsEnabled(next); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={() => { setSettingsOpen(false); setExportFormatOpen(true); }} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
@@ -413,6 +418,22 @@ function ExportFormatSheet({ visible, colors, locale, onClose, onSelect }: { vis
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
   const option = (format: "text" | "json", icon: "description" | "data-object", label: string, detail: string) => <Pressable onPress={() => { haptic.medium(); onSelect(format); }} style={({ pressed }) => [{ minHeight: 72, paddingHorizontal: 14, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.surface, borderColor: colors.line, borderWidth: StyleSheet.hairlineWidth }, pressed && styles.pressedMain]}><View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" }}><MaterialIcons name={icon} size={20} color={colors.text} /></View><View style={{ flex: 1 }}><Text style={[styles.settingText, { color: colors.text }]}>{label}</Text><Text style={[styles.timeZoneValue, { color: colors.muted }]}>{detail}</Text></View><MaterialIcons name="chevron-right" size={20} color={colors.muted} /></Pressable>;
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("export")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><View style={{ gap: 10 }}>{option("text", "description", "TXT", ".txt")}{option("json", "data-object", "JSON", ".json")}</View></View></View></Modal>;
+}
+
+function StatsSheet({ visible, colors, locale, summary, onClose }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; summary: ReturnType<typeof buildActivitySummary>; onClose: () => void }) {
+  const labels: Record<Locale, { title: string; total: string; active: string; streak: string; activity: string }> = {
+    zh: { title: "统计", total: "总记录", active: "活跃天数", streak: "当前连续", activity: "过去 12 周" },
+    en: { title: "Statistics", total: "Entries", active: "Active days", streak: "Current streak", activity: "Last 12 weeks" },
+    ja: { title: "統計", total: "記録数", active: "活動日数", streak: "連続記録", activity: "過去 12 週間" },
+    ko: { title: "통계", total: "기록", active: "활동 일수", streak: "연속 기록", activity: "지난 12주" },
+    es: { title: "Estadísticas", total: "Registros", active: "Días activos", streak: "Racha actual", activity: "Últimas 12 semanas" },
+    fr: { title: "Statistiques", total: "Entrées", active: "Jours actifs", streak: "Série actuelle", activity: "12 dernières semaines" },
+    de: { title: "Statistik", total: "Einträge", active: "Aktive Tage", streak: "Aktuelle Serie", activity: "Letzte 12 Wochen" },
+  };
+  const copy = labels[locale];
+  const levelColor = (level: number) => level === 0 ? colors.surface : ["#B9E7C8", "#75C98A", "#2F9E55", "#167B3B"][level - 1];
+  const metric = (value: number, label: string) => <View style={{ flex: 1, borderRadius: 16, backgroundColor: colors.surface, paddingVertical: 14, paddingHorizontal: 12 }}><Text style={{ color: colors.text, fontSize: 24, lineHeight: 29, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{value}</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>{label}</Text></View>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.sheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy.title}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><View style={{ flexDirection: "row", gap: 8, marginBottom: 23 }}>{metric(summary.totalEntries, copy.total)}{metric(summary.activeDays, copy.active)}{metric(summary.currentStreak, copy.streak)}</View><Text style={[styles.fieldLabel, { color: colors.muted }]}>{copy.activity}</Text><View style={{ borderRadius: 18, backgroundColor: colors.surface, padding: 14 }}><View style={{ flexDirection: "row", gap: 4, justifyContent: "space-between" }}>{summary.weeks.map((week, weekIndex) => <View key={weekIndex} style={{ gap: 4 }}>{week.map((cell) => <View key={cell.date} style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: levelColor(cell.level) }} />)}</View>)}</View></View></View></View></Modal>;
 }
 
 const styles: Record<string, any> = StyleSheet.create({

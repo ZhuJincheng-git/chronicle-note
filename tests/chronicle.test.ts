@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildExport, formatDay, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
+import { buildActivitySummary } from "../lib/activity-stats";
 
 const older: ChronicleEntry = {
   id: "older",
@@ -59,5 +60,13 @@ describe("chronicle data utilities", () => {
 
   it("includes the year for Chinese timeline groups outside the current year", () => {
     expect(formatDay("2010-08-15T12:00:00.000Z", "zh", "Asia/Shanghai")).toBe("2010年8月15日 周日");
+  });
+
+  it("aggregates entries into daily activity cells and a current streak", () => {
+    const summary = buildActivitySummary([older, newer], "UTC", "2026-08-15");
+    expect(summary.totalEntries).toBe(2);
+    expect(summary.activeDays).toBe(1);
+    expect(summary.currentStreak).toBe(1);
+    expect(summary.weeks).toHaveLength(12);
   });
 });
