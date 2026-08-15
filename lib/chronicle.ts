@@ -167,20 +167,202 @@ export const translations = {
     timeZone: "タイムゾーン",
     systemTimeZone: "端末の時刻に合わせる",
     timeZoneHint: "記録とタイムラインはこのタイムゾーンで表示されます。",
-    data: "データ", haptics: "ナビゲーションの振動",
+    data: "データ",
+    haptics: "ナビゲーションの振動",
     dateFormat: "ja-JP",
   },
   ko: {
-    appName: "기록", today: "오늘", timeline: "타임라인", entries: "개의 기록", emptyTitle: "오늘은 아직 기록이 없어요", emptySubtitle: "다음 순간을 남겨 보세요.", add: "기록", newRecord: "새 기록", activity: "지금 무엇을 하고 있나요?", activityPlaceholder: "예: 프로젝트 노트 정리", date: "날짜", chooseDate: "날짜 선택", selectTime: "시간 선택", done: "완료", time: "시간", point: "시점", range: "시간대", startTime: "시작 시간", endTime: "종료 시간", save: "기록 저장", cancel: "취소", settings: "설정", appearance: "화면", darkMode: "다크 테마", haptics: "탐색 진동", language: "언어", export: "모두 내보내기", deleteAll: "모두 삭제", privacy: "모든 기록은 이 기기에만 저장됩니다.", confirmDelete: "기록을 삭제할까요?", confirmClear: "모든 기록을 삭제할까요?", deleteOneHint: "이 기록은 복구할 수 없습니다.", clearHint: "모든 기록이 영구적으로 삭제되며 복구할 수 없습니다.", delete: "삭제", invalidTime: "24시간 형식으로 입력하세요. 예: 09:30", futureTime: "현재보다 미래의 시간은 기록할 수 없습니다.", invalidRange: "종료 시간은 시작 시간보다 늦어야 합니다.", missingText: "먼저 지금 하는 일을 적어 주세요.", exportTitle: "기록 타임라인", exportUnavailable: "이 기기에서는 공유 화면을 열 수 없습니다.", shareTitle: "기록 타임라인 내보내기", timeZone: "시간대", systemTimeZone: "시스템 시간대 사용", timeZoneHint: "기록과 타임라인은 이 시간대로 표시됩니다.", data: "데이터", dateFormat: "ko-KR",
+    appName: "기록",
+    today: "오늘",
+    timeline: "타임라인",
+    entries: "개의 기록",
+    emptyTitle: "오늘은 아직 기록이 없어요",
+    emptySubtitle: "다음 순간을 남겨 보세요.",
+    add: "기록",
+    newRecord: "새 기록",
+    activity: "지금 무엇을 하고 있나요?",
+    activityPlaceholder: "예: 프로젝트 노트 정리",
+    date: "날짜",
+    chooseDate: "날짜 선택",
+    selectTime: "시간 선택",
+    done: "완료",
+    time: "시간",
+    point: "시점",
+    range: "시간대",
+    startTime: "시작 시간",
+    endTime: "종료 시간",
+    save: "기록 저장",
+    cancel: "취소",
+    settings: "설정",
+    appearance: "화면",
+    darkMode: "다크 테마",
+    haptics: "탐색 진동",
+    language: "언어",
+    export: "모두 내보내기",
+    deleteAll: "모두 삭제",
+    privacy: "모든 기록은 이 기기에만 저장됩니다.",
+    confirmDelete: "기록을 삭제할까요?",
+    confirmClear: "모든 기록을 삭제할까요?",
+    deleteOneHint: "이 기록은 복구할 수 없습니다.",
+    clearHint: "모든 기록이 영구적으로 삭제되며 복구할 수 없습니다.",
+    delete: "삭제",
+    invalidTime: "24시간 형식으로 입력하세요. 예: 09:30",
+    futureTime: "현재보다 미래의 시간은 기록할 수 없습니다.",
+    invalidRange: "종료 시간은 시작 시간보다 늦어야 합니다.",
+    missingText: "먼저 지금 하는 일을 적어 주세요.",
+    exportTitle: "기록 타임라인",
+    exportUnavailable: "이 기기에서는 공유 화면을 열 수 없습니다.",
+    shareTitle: "기록 타임라인 내보내기",
+    timeZone: "시간대",
+    systemTimeZone: "시스템 시간대 사용",
+    timeZoneHint: "기록과 타임라인은 이 시간대로 표시됩니다.",
+    data: "데이터",
+    dateFormat: "ko-KR",
   },
   es: {
-    appName: "Crónica", today: "Hoy", timeline: "Cronología", entries: "registros", emptyTitle: "No hay registros hoy", emptySubtitle: "El próximo momento merece guardarse.", add: "Registrar", newRecord: "Nuevo registro", activity: "¿Qué estás haciendo?", activityPlaceholder: "Por ejemplo, organicé notas del proyecto", date: "Fecha", chooseDate: "Elegir fecha", selectTime: "Elegir hora", done: "Listo", time: "Hora", point: "Momento", range: "Periodo", startTime: "Hora de inicio", endTime: "Hora de fin", save: "Guardar registro", cancel: "Cancelar", settings: "Ajustes", appearance: "Apariencia", darkMode: "Tema oscuro", haptics: "Vibración de navegación", language: "Idioma", export: "Exportar todo", deleteAll: "Eliminar todo", privacy: "Todos los registros permanecen en este dispositivo.", confirmDelete: "¿Eliminar este registro?", confirmClear: "¿Eliminar todos los registros?", deleteOneHint: "Este registro no se puede recuperar.", clearHint: "Todos los registros se eliminarán permanentemente.", delete: "Eliminar", invalidTime: "Usa formato de 24 horas, por ejemplo 09:30.", futureTime: "Solo se puede registrar la hora actual o pasada.", invalidRange: "La hora de fin debe ser posterior a la de inicio.", missingText: "Primero escribe qué estás haciendo.", exportTitle: "Cronología de Crónica", exportUnavailable: "No se puede compartir desde este dispositivo.", shareTitle: "Exportar cronología", timeZone: "Zona horaria", systemTimeZone: "Usar zona horaria del sistema", timeZoneHint: "Los registros y la cronología usan esta zona horaria.", data: "DATOS", dateFormat: "es-ES",
+    appName: "Crónica",
+    today: "Hoy",
+    timeline: "Cronología",
+    entries: "registros",
+    emptyTitle: "No hay registros hoy",
+    emptySubtitle: "El próximo momento merece guardarse.",
+    add: "Registrar",
+    newRecord: "Nuevo registro",
+    activity: "¿Qué estás haciendo?",
+    activityPlaceholder: "Por ejemplo, organicé notas del proyecto",
+    date: "Fecha",
+    chooseDate: "Elegir fecha",
+    selectTime: "Elegir hora",
+    done: "Listo",
+    time: "Hora",
+    point: "Momento",
+    range: "Periodo",
+    startTime: "Hora de inicio",
+    endTime: "Hora de fin",
+    save: "Guardar registro",
+    cancel: "Cancelar",
+    settings: "Ajustes",
+    appearance: "Apariencia",
+    darkMode: "Tema oscuro",
+    haptics: "Vibración de navegación",
+    language: "Idioma",
+    export: "Exportar todo",
+    deleteAll: "Eliminar todo",
+    privacy: "Todos los registros permanecen en este dispositivo.",
+    confirmDelete: "¿Eliminar este registro?",
+    confirmClear: "¿Eliminar todos los registros?",
+    deleteOneHint: "Este registro no se puede recuperar.",
+    clearHint: "Todos los registros se eliminarán permanentemente.",
+    delete: "Eliminar",
+    invalidTime: "Usa formato de 24 horas, por ejemplo 09:30.",
+    futureTime: "Solo se puede registrar la hora actual o pasada.",
+    invalidRange: "La hora de fin debe ser posterior a la de inicio.",
+    missingText: "Primero escribe qué estás haciendo.",
+    exportTitle: "Cronología de Crónica",
+    exportUnavailable: "No se puede compartir desde este dispositivo.",
+    shareTitle: "Exportar cronología",
+    timeZone: "Zona horaria",
+    systemTimeZone: "Usar zona horaria del sistema",
+    timeZoneHint: "Los registros y la cronología usan esta zona horaria.",
+    data: "DATOS",
+    dateFormat: "es-ES",
   },
   fr: {
-    appName: "Chronique", today: "Aujourd’hui", timeline: "Chronologie", entries: "entrées", emptyTitle: "Aucun enregistrement aujourd’hui", emptySubtitle: "Le prochain moment mérite d’être gardé.", add: "Noter", newRecord: "Nouvelle entrée", activity: "Que faites-vous ?", activityPlaceholder: "Par exemple, j’ai organisé les notes du projet", date: "Date", chooseDate: "Choisir la date", selectTime: "Choisir l’heure", done: "Terminé", time: "Heure", point: "Instant", range: "Plage", startTime: "Heure de début", endTime: "Heure de fin", save: "Enregistrer", cancel: "Annuler", settings: "Réglages", appearance: "Apparence", darkMode: "Thème sombre", haptics: "Vibrations de navigation", language: "Langue", export: "Tout exporter", deleteAll: "Tout supprimer", privacy: "Toutes les entrées restent sur cet appareil.", confirmDelete: "Supprimer cette entrée ?", confirmClear: "Supprimer toutes les entrées ?", deleteOneHint: "Cette entrée ne pourra pas être restaurée.", clearHint: "Toutes les entrées seront supprimées définitivement.", delete: "Supprimer", invalidTime: "Utilisez le format 24 h, par exemple 09:30.", futureTime: "Seuls les instants présents ou passés peuvent être notés.", invalidRange: "L’heure de fin doit être après le début.", missingText: "Écrivez d’abord ce que vous faites.", exportTitle: "Chronologie de Chronique", exportUnavailable: "Le partage n’est pas disponible sur cet appareil.", shareTitle: "Exporter la chronologie", timeZone: "Fuseau horaire", systemTimeZone: "Utiliser le fuseau système", timeZoneHint: "Les entrées et la chronologie utilisent ce fuseau horaire.", data: "DONNÉES", dateFormat: "fr-FR",
+    appName: "Chronique",
+    today: "Aujourd’hui",
+    timeline: "Chronologie",
+    entries: "entrées",
+    emptyTitle: "Aucun enregistrement aujourd’hui",
+    emptySubtitle: "Le prochain moment mérite d’être gardé.",
+    add: "Noter",
+    newRecord: "Nouvelle entrée",
+    activity: "Que faites-vous ?",
+    activityPlaceholder: "Par exemple, j’ai organisé les notes du projet",
+    date: "Date",
+    chooseDate: "Choisir la date",
+    selectTime: "Choisir l’heure",
+    done: "Terminé",
+    time: "Heure",
+    point: "Instant",
+    range: "Plage",
+    startTime: "Heure de début",
+    endTime: "Heure de fin",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    settings: "Réglages",
+    appearance: "Apparence",
+    darkMode: "Thème sombre",
+    haptics: "Vibrations de navigation",
+    language: "Langue",
+    export: "Tout exporter",
+    deleteAll: "Tout supprimer",
+    privacy: "Toutes les entrées restent sur cet appareil.",
+    confirmDelete: "Supprimer cette entrée ?",
+    confirmClear: "Supprimer toutes les entrées ?",
+    deleteOneHint: "Cette entrée ne pourra pas être restaurée.",
+    clearHint: "Toutes les entrées seront supprimées définitivement.",
+    delete: "Supprimer",
+    invalidTime: "Utilisez le format 24 h, par exemple 09:30.",
+    futureTime: "Seuls les instants présents ou passés peuvent être notés.",
+    invalidRange: "L’heure de fin doit être après le début.",
+    missingText: "Écrivez d’abord ce que vous faites.",
+    exportTitle: "Chronologie de Chronique",
+    exportUnavailable: "Le partage n’est pas disponible sur cet appareil.",
+    shareTitle: "Exporter la chronologie",
+    timeZone: "Fuseau horaire",
+    systemTimeZone: "Utiliser le fuseau système",
+    timeZoneHint: "Les entrées et la chronologie utilisent ce fuseau horaire.",
+    data: "DONNÉES",
+    dateFormat: "fr-FR",
   },
   de: {
-    appName: "Chronik", today: "Heute", timeline: "Zeitachse", entries: "Einträge", emptyTitle: "Heute noch keine Einträge", emptySubtitle: "Der nächste Moment ist es wert, festgehalten zu werden.", add: "Eintragen", newRecord: "Neuer Eintrag", activity: "Was machst du gerade?", activityPlaceholder: "Zum Beispiel: Projektnotizen sortiert", date: "Datum", chooseDate: "Datum wählen", selectTime: "Uhrzeit wählen", done: "Fertig", time: "Zeit", point: "Zeitpunkt", range: "Zeitraum", startTime: "Startzeit", endTime: "Endzeit", save: "Eintrag speichern", cancel: "Abbrechen", settings: "Einstellungen", appearance: "Darstellung", darkMode: "Dunkles Design", haptics: "Navigationsvibration", language: "Sprache", export: "Alles exportieren", deleteAll: "Alles löschen", privacy: "Alle Einträge bleiben auf diesem Gerät.", confirmDelete: "Diesen Eintrag löschen?", confirmClear: "Alle Einträge löschen?", deleteOneHint: "Dieser Eintrag kann nicht wiederhergestellt werden.", clearHint: "Alle Einträge werden dauerhaft entfernt.", delete: "Löschen", invalidTime: "Nutze das 24-Stunden-Format, zum Beispiel 09:30.", futureTime: "Nur die aktuelle oder vergangene Zeit kann eingetragen werden.", invalidRange: "Die Endzeit muss nach der Startzeit liegen.", missingText: "Schreibe zuerst, was du gerade tust.", exportTitle: "Chronik-Zeitachse", exportUnavailable: "Teilen ist auf diesem Gerät nicht verfügbar.", shareTitle: "Chronik exportieren", timeZone: "Zeitzone", systemTimeZone: "Systemzeitzone verwenden", timeZoneHint: "Einträge und Zeitachse verwenden diese Zeitzone.", data: "DATEN", dateFormat: "de-DE",
+    appName: "Chronik",
+    today: "Heute",
+    timeline: "Zeitachse",
+    entries: "Einträge",
+    emptyTitle: "Heute noch keine Einträge",
+    emptySubtitle: "Der nächste Moment ist es wert, festgehalten zu werden.",
+    add: "Eintragen",
+    newRecord: "Neuer Eintrag",
+    activity: "Was machst du gerade?",
+    activityPlaceholder: "Zum Beispiel: Projektnotizen sortiert",
+    date: "Datum",
+    chooseDate: "Datum wählen",
+    selectTime: "Uhrzeit wählen",
+    done: "Fertig",
+    time: "Zeit",
+    point: "Zeitpunkt",
+    range: "Zeitraum",
+    startTime: "Startzeit",
+    endTime: "Endzeit",
+    save: "Eintrag speichern",
+    cancel: "Abbrechen",
+    settings: "Einstellungen",
+    appearance: "Darstellung",
+    darkMode: "Dunkles Design",
+    haptics: "Navigationsvibration",
+    language: "Sprache",
+    export: "Alles exportieren",
+    deleteAll: "Alles löschen",
+    privacy: "Alle Einträge bleiben auf diesem Gerät.",
+    confirmDelete: "Diesen Eintrag löschen?",
+    confirmClear: "Alle Einträge löschen?",
+    deleteOneHint: "Dieser Eintrag kann nicht wiederhergestellt werden.",
+    clearHint: "Alle Einträge werden dauerhaft entfernt.",
+    delete: "Löschen",
+    invalidTime: "Nutze das 24-Stunden-Format, zum Beispiel 09:30.",
+    futureTime:
+      "Nur die aktuelle oder vergangene Zeit kann eingetragen werden.",
+    invalidRange: "Die Endzeit muss nach der Startzeit liegen.",
+    missingText: "Schreibe zuerst, was du gerade tust.",
+    exportTitle: "Chronik-Zeitachse",
+    exportUnavailable: "Teilen ist auf diesem Gerät nicht verfügbar.",
+    shareTitle: "Chronik exportieren",
+    timeZone: "Zeitzone",
+    systemTimeZone: "Systemzeitzone verwenden",
+    timeZoneHint: "Einträge und Zeitachse verwenden diese Zeitzone.",
+    data: "DATEN",
+    dateFormat: "de-DE",
   },
 } as const;
 
@@ -213,7 +395,10 @@ export function resolveTimeZone(preference: TimeZonePreference): string {
   }
 }
 
-export function getZonedParts(iso: string | Date, timeZone: TimeZonePreference): { year: number; month: number; day: number; hour: number; minute: number } {
+export function getZonedParts(
+  iso: string | Date,
+  timeZone: TimeZonePreference,
+): { year: number; month: number; day: number; hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: resolveTimeZone(timeZone),
     year: "numeric",
@@ -223,8 +408,15 @@ export function getZonedParts(iso: string | Date, timeZone: TimeZonePreference):
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(new Date(iso));
-  const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-  return { year: value("year"), month: value("month"), day: value("day"), hour: value("hour"), minute: value("minute") };
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+  return {
+    year: value("year"),
+    month: value("month"),
+    day: value("day"),
+    hour: value("hour"),
+    minute: value("minute"),
+  };
 }
 
 export function currentDateInTimeZone(timeZone: TimeZonePreference): string {
@@ -237,13 +429,26 @@ export function currentTimeInTimeZone(timeZone: TimeZonePreference): string {
   return `${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
 }
 
-function timeZoneOffsetMs(timestamp: number, timeZone: TimeZonePreference): number {
+function timeZoneOffsetMs(
+  timestamp: number,
+  timeZone: TimeZonePreference,
+): number {
   const parts = getZonedParts(new Date(timestamp), timeZone);
-  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+  const asUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+  );
   return asUtc - timestamp;
 }
 
-export function zonedDateTimeToIso(date: string, time: string, timeZone: TimeZonePreference): string | null {
+export function zonedDateTimeToIso(
+  date: string,
+  time: string,
+  timeZone: TimeZonePreference,
+): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isValidTime(time)) return null;
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
@@ -251,22 +456,44 @@ export function zonedDateTimeToIso(date: string, time: string, timeZone: TimeZon
   const firstPass = utcCandidate - timeZoneOffsetMs(utcCandidate, timeZone);
   const instant = utcCandidate - timeZoneOffsetMs(firstPass, timeZone);
   const localized = getZonedParts(new Date(instant), timeZone);
-  if (localized.year !== year || localized.month !== month || localized.day !== day || localized.hour !== hour || localized.minute !== minute) return null;
+  if (
+    localized.year !== year ||
+    localized.month !== month ||
+    localized.day !== day ||
+    localized.hour !== hour ||
+    localized.minute !== minute
+  )
+    return null;
   return new Date(instant).toISOString();
 }
 
-export function isPastOrNow(date: string, time: string, timeZone: TimeZonePreference): boolean {
+export function isPastOrNow(
+  date: string,
+  time: string,
+  timeZone: TimeZonePreference,
+): boolean {
   const iso = zonedDateTimeToIso(date, time, timeZone);
   return Boolean(iso && new Date(iso).getTime() <= Date.now());
 }
 
-export function isEndAfterStart(date: string, startTime: string, endTime: string, timeZone: TimeZonePreference): boolean {
+export function isEndAfterStart(
+  date: string,
+  startTime: string,
+  endTime: string,
+  timeZone: TimeZonePreference,
+): boolean {
   const start = zonedDateTimeToIso(date, startTime, timeZone);
   const end = zonedDateTimeToIso(date, endTime, timeZone);
-  return Boolean(start && end && new Date(end).getTime() > new Date(start).getTime());
+  return Boolean(
+    start && end && new Date(end).getTime() > new Date(start).getTime(),
+  );
 }
 
-export function formatTime(iso: string, locale: Locale, timeZone: TimeZonePreference = "system"): string {
+export function formatTime(
+  iso: string,
+  locale: Locale,
+  timeZone: TimeZonePreference = "system",
+): string {
   return new Intl.DateTimeFormat(translations[locale].dateFormat, {
     timeZone: resolveTimeZone(timeZone),
     hour: "2-digit",
@@ -275,32 +502,53 @@ export function formatTime(iso: string, locale: Locale, timeZone: TimeZonePrefer
   }).format(new Date(iso));
 }
 
-export function dateKey(iso: string, timeZone: TimeZonePreference = "system"): string {
+export function dateKey(
+  iso: string,
+  timeZone: TimeZonePreference = "system",
+): string {
   const parts = getZonedParts(iso, timeZone);
-  return [parts.year, String(parts.month).padStart(2, "0"), String(parts.day).padStart(2, "0")].join("-");
+  return [
+    parts.year,
+    String(parts.month).padStart(2, "0"),
+    String(parts.day).padStart(2, "0"),
+  ].join("-");
 }
 
-export function formatDay(iso: string, locale: Locale, timeZone: TimeZonePreference = "system"): string {
+export function formatDay(
+  iso: string,
+  locale: Locale,
+  timeZone: TimeZonePreference = "system",
+): string {
   const isToday = dateKey(iso, timeZone) === currentDateInTimeZone(timeZone);
   if (isToday) return t(locale, "today");
 
   if (locale === "zh") {
     const parts = getZonedParts(iso, timeZone);
-    const weekday = "日一二三四五六"[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()];
+    const weekday = "日一二三四五六"[
+      new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()
+    ];
     const currentYear = getZonedParts(new Date(), timeZone).year;
     return `${parts.year === currentYear ? "" : `${parts.year}年`}${parts.month}月${parts.day}日 周${weekday}`;
   }
 
   return new Intl.DateTimeFormat(translations[locale].dateFormat, {
     timeZone: resolveTimeZone(timeZone),
-    year: getZonedParts(iso, timeZone).year === getZonedParts(new Date(), timeZone).year ? undefined : "numeric",
+    year:
+      getZonedParts(iso, timeZone).year ===
+      getZonedParts(new Date(), timeZone).year
+        ? undefined
+        : "numeric",
     month: "short",
     day: "numeric",
     weekday: "short",
   }).format(new Date(iso));
 }
 
-export function formatDateForExport(iso: string, locale: Locale, timeZone: TimeZonePreference = "system"): string {
+export function formatDateForExport(
+  iso: string,
+  locale: Locale,
+  timeZone: TimeZonePreference = "system",
+): string {
   return new Intl.DateTimeFormat(translations[locale].dateFormat, {
     timeZone: resolveTimeZone(timeZone),
     year: "numeric",
@@ -311,17 +559,27 @@ export function formatDateForExport(iso: string, locale: Locale, timeZone: TimeZ
 }
 
 export function sortEntries(entries: ChronicleEntry[]): ChronicleEntry[] {
-  return [...entries].sort((first, second) => new Date(second.startAt).getTime() - new Date(first.startAt).getTime());
+  return [...entries].sort(
+    (first, second) =>
+      new Date(second.startAt).getTime() - new Date(first.startAt).getTime(),
+  );
 }
 
-export function buildExport(entries: ChronicleEntry[], locale: Locale, timeZone: TimeZonePreference = "system"): string {
+export function buildExport(
+  entries: ChronicleEntry[],
+  locale: Locale,
+  timeZone: TimeZonePreference = "system",
+): string {
   const ordered = sortEntries(entries);
-  const groups = ordered.reduce<Record<string, ChronicleEntry[]>>((result, entry) => {
-    const key = dateKey(entry.startAt, timeZone);
-    result[key] = result[key] ?? [];
-    result[key].push(entry);
-    return result;
-  }, {});
+  const groups = ordered.reduce<Record<string, ChronicleEntry[]>>(
+    (result, entry) => {
+      const key = dateKey(entry.startAt, timeZone);
+      result[key] = result[key] ?? [];
+      result[key].push(entry);
+      return result;
+    },
+    {},
+  );
 
   const lines = [t(locale, "exportTitle"), ""];
   Object.values(groups).forEach((group) => {

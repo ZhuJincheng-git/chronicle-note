@@ -19,12 +19,14 @@ export const haptic = {
     if (canHaptic()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   },
   success: () => {
-    if (canHaptic()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (canHaptic())
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
   selection: () => {
     if (canHaptic()) Haptics.selectionAsync();
   },
   warning: () => {
-    if (canHaptic()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    if (canHaptic())
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   },
 };

@@ -2,14 +2,35 @@ import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
-import { buildExport, type ChronicleEntry, type Locale, type TimeZonePreference } from "@/lib/chronicle";
+import {
+  buildExport,
+  type ChronicleEntry,
+  type Locale,
+  type TimeZonePreference,
+} from "@/lib/chronicle";
 
 export type ExportFormat = "text" | "json";
 
-export async function exportChronicle(entries: ChronicleEntry[], locale: Locale, timeZone: TimeZonePreference, shareTitle: string, format: ExportFormat = "text"): Promise<boolean> {
-  const content = format === "json"
-    ? JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), timeZone, entries }, null, 2)
-    : buildExport(entries, locale, timeZone);
+export async function exportChronicle(
+  entries: ChronicleEntry[],
+  locale: Locale,
+  timeZone: TimeZonePreference,
+  shareTitle: string,
+  format: ExportFormat = "text",
+): Promise<boolean> {
+  const content =
+    format === "json"
+      ? JSON.stringify(
+          {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            timeZone,
+            entries,
+          },
+          null,
+          2,
+        )
+      : buildExport(entries, locale, timeZone);
   const extension = format === "json" ? "json" : "txt";
   const mimeType = format === "json" ? "application/json" : "text/plain";
 
@@ -31,7 +52,9 @@ export async function exportChronicle(entries: ChronicleEntry[], locale: Locale,
   if (!isAvailable || !FileSystem.cacheDirectory) return false;
 
   const fileUri = `${FileSystem.cacheDirectory}chronicle-${new Date().toISOString().slice(0, 10)}.${extension}`;
-  await FileSystem.writeAsStringAsync(fileUri, content, { encoding: FileSystem.EncodingType.UTF8 });
+  await FileSystem.writeAsStringAsync(fileUri, content, {
+    encoding: FileSystem.EncodingType.UTF8,
+  });
   await Sharing.shareAsync(fileUri, {
     dialogTitle: shareTitle,
     mimeType,
