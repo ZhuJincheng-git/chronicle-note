@@ -13,6 +13,7 @@ interface ChronicleContextValue extends ChronicleState {
   setLocale: (locale: Locale) => Promise<void>;
   setTheme: (theme: ThemeMode) => Promise<void>;
   setTimeZone: (timeZone: TimeZonePreference) => Promise<void>;
+  setHapticsEnabled: (enabled: boolean) => Promise<void>;
 }
 
 const ChronicleContext = createContext<ChronicleContextValue | null>(null);
@@ -23,6 +24,7 @@ function normalizeState(value: Partial<ChronicleState>): ChronicleState {
     locale: value.locale === "en" || value.locale === "ja" || value.locale === "ko" || value.locale === "es" || value.locale === "fr" || value.locale === "de" ? value.locale : "zh",
     theme: value.theme === "dark" ? "dark" : "light",
     timeZone: typeof value.timeZone === "string" && value.timeZone ? value.timeZone : "system",
+    hapticsEnabled: value.hapticsEnabled !== false,
   };
 }
 
@@ -79,7 +81,11 @@ export function ChronicleProvider({ children }: PropsWithChildren) {
     await persist({ ...state, timeZone });
   }, [persist, state]);
 
-  const value = useMemo(() => ({ ...state, isReady, addEntry, deleteEntry, clearEntries, setLocale, setTheme, setTimeZone }), [addEntry, clearEntries, deleteEntry, isReady, setLocale, setTheme, setTimeZone, state]);
+  const setHapticsEnabled = useCallback(async (hapticsEnabled: boolean) => {
+    await persist({ ...state, hapticsEnabled });
+  }, [persist, state]);
+
+  const value = useMemo(() => ({ ...state, isReady, addEntry, deleteEntry, clearEntries, setLocale, setTheme, setTimeZone, setHapticsEnabled }), [addEntry, clearEntries, deleteEntry, isReady, setHapticsEnabled, setLocale, setTheme, setTimeZone, state]);
 
   return <ChronicleContext.Provider value={value}>{children}</ChronicleContext.Provider>;
 }
