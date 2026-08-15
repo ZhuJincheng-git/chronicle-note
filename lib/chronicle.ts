@@ -277,16 +277,21 @@ export function dateKey(iso: string, timeZone: TimeZonePreference = "system"): s
 }
 
 export function formatDay(iso: string, locale: Locale, timeZone: TimeZonePreference = "system"): string {
-  const day = new Date(iso);
   const isToday = dateKey(iso, timeZone) === currentDateInTimeZone(timeZone);
   if (isToday) return t(locale, "today");
+
+  if (locale === "zh") {
+    const parts = getZonedParts(iso, timeZone);
+    const weekday = "日一二三四五六"[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()];
+    return `${parts.month}月${parts.day}日 周${weekday}`;
+  }
 
   return new Intl.DateTimeFormat(translations[locale].dateFormat, {
     timeZone: resolveTimeZone(timeZone),
     month: "short",
     day: "numeric",
     weekday: "short",
-  }).format(day);
+  }).format(new Date(iso));
 }
 
 export function formatDateForExport(iso: string, locale: Locale, timeZone: TimeZonePreference = "system"): string {

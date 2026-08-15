@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildExport, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
+import { buildExport, formatDay, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
 
 const older: ChronicleEntry = {
   id: "older",
@@ -51,5 +51,9 @@ describe("chronicle data utilities", () => {
     expect(t("es", "today")).toBe("Hoy");
     expect(t("fr", "done")).toBe("Terminé");
     expect(t("de", "timeZone")).toBe("Zeitzone");
+  });
+
+  it("formats non-today dates in Chinese without device locale data", () => {
+    expect(formatDay("2026-08-13T12:00:00.000Z", "zh", "Asia/Shanghai")).toBe("8月13日 周四");
   });
 });

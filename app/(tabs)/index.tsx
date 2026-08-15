@@ -222,7 +222,7 @@ export default function HomeScreen() {
           style={styles.list}
           contentContainerStyle={[sections.length ? styles.listContent : styles.emptyListContent, { paddingBottom: Math.max(insets.bottom + 108, 128) }]}
           ListHeaderComponent={<Text style={[styles.timelineTitle, { color: colors.text }]}>{copy("timeline")}</Text>}
-          renderSectionHeader={({ section }) => <View style={[styles.dayHeader, { backgroundColor: colors.background, paddingTop: 15, paddingBottom: 10 }]}><Text style={[styles.dayText, { color: colors.text }]}>{formatDay(section.iso, locale, timeZone)}</Text><View style={[styles.dayLine, { backgroundColor: colors.line }]} /></View>}
+          renderSectionHeader={({ section }) => <View style={{ marginHorizontal: -20, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, backgroundColor: colors.background }}><View style={[styles.dayHeader, { marginTop: 0, marginBottom: 0 }]}><Text style={[styles.dayText, { color: colors.text }]}>{formatDay(section.iso, locale, timeZone)}</Text><View style={[styles.dayLine, { backgroundColor: colors.line }]} /></View></View>}
           stickySectionHeadersEnabled
           onViewableItemsChanged={({ viewableItems }) => { const firstEntry = viewableItems.find((item) => item.item); if (firstEntry?.item) { const index = sections.findIndex((section) => section.data.some((entry) => entry.id === firstEntry.item.id)); if (index >= 0) setActiveDateIndex(index); } }}
           viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
