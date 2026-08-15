@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
 import { defaultChronicleState, sortEntries, zonedDateTimeToIso, type ChronicleEntry, type ChronicleState, type Locale, type ThemeMode, type TimeZonePreference } from "@/lib/chronicle";
+import { setHapticsEnabled as configureHaptics } from "@/lib/haptics";
 
 const STORAGE_KEY = "chronicle-state-v1";
 
@@ -40,6 +41,10 @@ export function ChronicleProvider({ children }: PropsWithChildren) {
       .catch(() => undefined)
       .finally(() => setIsReady(true));
   }, []);
+
+  useEffect(() => {
+    configureHaptics(state.hapticsEnabled);
+  }, [state.hapticsEnabled]);
 
   const persist = useCallback(async (next: ChronicleState) => {
     setState(next);

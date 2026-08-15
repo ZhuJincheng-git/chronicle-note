@@ -155,7 +155,7 @@ export default function HomeScreen() {
     const time = entry.endAt ? `${formatTime(entry.startAt, locale, timeZone)}–${formatTime(entry.endAt, locale, timeZone)}` : formatTime(entry.startAt, locale, timeZone);
     return (
       <View style={styles.timelineRow}>
-        <Text style={[styles.timeText, { color: colors.muted }]}>{time}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.74} style={[styles.timeText, { width: 94, color: colors.muted }]}>{time}</Text>
         <View style={[styles.dot, { backgroundColor: colors.text }]} />
         <Animated.View entering={Platform.OS === "web" ? undefined : FadeInDown.duration(220)} style={[styles.entryCard, { backgroundColor: colors.surface, borderColor: isDark ? colors.line : "transparent" }]}>
           <Text style={[styles.entryText, { color: colors.text }]}>{entry.text}</Text>

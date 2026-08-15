@@ -52,7 +52,7 @@ export const translations = {
     settings: "设置",
     appearance: "显示",
     darkMode: "黑色主题",
-    haptics: "导航振动",
+    haptics: "振动反馈",
     language: "语言",
     export: "导出全部",
     deleteAll: "删除全部",
@@ -287,11 +287,13 @@ export function formatDay(iso: string, locale: Locale, timeZone: TimeZonePrefere
   if (locale === "zh") {
     const parts = getZonedParts(iso, timeZone);
     const weekday = "日一二三四五六"[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()];
-    return `${parts.month}月${parts.day}日 周${weekday}`;
+    const currentYear = getZonedParts(new Date(), timeZone).year;
+    return `${parts.year === currentYear ? "" : `${parts.year}年`}${parts.month}月${parts.day}日 周${weekday}`;
   }
 
   return new Intl.DateTimeFormat(translations[locale].dateFormat, {
     timeZone: resolveTimeZone(timeZone),
+    year: getZonedParts(iso, timeZone).year === getZonedParts(new Date(), timeZone).year ? undefined : "numeric",
     month: "short",
     day: "numeric",
     weekday: "short",

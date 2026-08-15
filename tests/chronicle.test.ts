@@ -56,4 +56,8 @@ describe("chronicle data utilities", () => {
   it("formats non-today dates in Chinese without device locale data", () => {
     expect(formatDay("2026-08-13T12:00:00.000Z", "zh", "Asia/Shanghai")).toBe("8月13日 周四");
   });
+
+  it("includes the year for Chinese timeline groups outside the current year", () => {
+    expect(formatDay("2010-08-15T12:00:00.000Z", "zh", "Asia/Shanghai")).toBe("2010年8月15日 周日");
+  });
 });

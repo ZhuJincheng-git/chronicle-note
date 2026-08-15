@@ -1,20 +1,30 @@
 import { Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 
+let isHapticsEnabled = true;
+
+export function setHapticsEnabled(enabled: boolean) {
+  isHapticsEnabled = enabled;
+}
+
+function canHaptic() {
+  return isHapticsEnabled && Platform.OS !== "web";
+}
+
 export const haptic = {
   light: () => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (canHaptic()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   },
   medium: () => {
-    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (canHaptic()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   },
   success: () => {
-    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (canHaptic()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
   selection: () => {
-    if (Platform.OS !== "web") Haptics.selectionAsync();
+    if (canHaptic()) Haptics.selectionAsync();
   },
   warning: () => {
-    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    if (canHaptic()) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   },
 };
