@@ -279,12 +279,19 @@ function DatePickerSheet({ visible, value, locale, timeZone, colors, onClose, on
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
   const [day, setDay] = useState(initial.day);
-  useEffect(() => { if (visible) { const parts = splitDate(value); setYear(parts.year); setMonth(parts.month); setDay(parts.day); } }, [value, visible]);
+  const yearRef = useRef(initial.year);
+  const monthRef = useRef(initial.month);
+  const dayRef = useRef(initial.day);
+  useEffect(() => { if (visible) { const parts = splitDate(value); yearRef.current = parts.year; monthRef.current = parts.month; dayRef.current = parts.day; setYear(parts.year); setMonth(parts.month); setDay(parts.day); } }, [value, visible]);
   const years = useMemo(() => Array.from({ length: Math.max(1, now.year - 2010 + 1) }, (_, index) => now.year - index), [now.year]);
   const months = useMemo(() => Array.from({ length: year === now.year ? now.month : 12 }, (_, index) => index + 1), [now.month, now.year, year]);
   const days = useMemo(() => Array.from({ length: year === now.year && month === now.month ? now.day : daysInMonth(year, month) }, (_, index) => index + 1), [month, now.day, now.month, now.year, year]);
-  const confirm = () => onConfirm(`${year}-${String(month).padStart(2, "0")}-${String(Math.min(day, days.length)).padStart(2, "0")}`);
-  return <PickerSheet visible={visible} colors={colors} title={copy("chooseDate")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={years.map(String)} selected={String(year)} onSelect={(next) => { setYear(Number(next)); setMonth((current) => Math.min(current, Number(next) === now.year ? now.month : 12)); }} colors={colors} /><WheelColumn values={months.map((item) => String(item).padStart(2, "0"))} selected={String(month).padStart(2, "0")} onSelect={(next) => setMonth(Number(next))} colors={colors} /><WheelColumn values={days.map((item) => String(item).padStart(2, "0"))} selected={String(Math.min(day, days.length)).padStart(2, "0")} onSelect={(next) => setDay(Number(next))} colors={colors} /></PickerSheet>;
+  const confirm = () => {
+    const finalMonth = Math.min(monthRef.current, yearRef.current === now.year ? now.month : 12);
+    const finalDay = Math.min(dayRef.current, daysInMonth(yearRef.current, finalMonth), yearRef.current === now.year && finalMonth === now.month ? now.day : 31);
+    onConfirm(`${yearRef.current}-${String(finalMonth).padStart(2, "0")}-${String(finalDay).padStart(2, "0")}`);
+  };
+  return <PickerSheet visible={visible} colors={colors} title={copy("chooseDate")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={years.map(String)} selected={String(year)} onSelect={(next) => { const nextYear = Number(next); yearRef.current = nextYear; const nextMonth = Math.min(monthRef.current, nextYear === now.year ? now.month : 12); monthRef.current = nextMonth; setYear(nextYear); setMonth(nextMonth); }} colors={colors} /><WheelColumn values={months.map((item) => String(item).padStart(2, "0"))} selected={String(month).padStart(2, "0")} onSelect={(next) => { monthRef.current = Number(next); setMonth(Number(next)); }} colors={colors} /><WheelColumn values={days.map((item) => String(item).padStart(2, "0"))} selected={String(Math.min(day, days.length)).padStart(2, "0")} onSelect={(next) => { dayRef.current = Number(next); setDay(Number(next)); }} colors={colors} /></PickerSheet>;
 }
 
 function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClose, onConfirm }: { visible: boolean; value: string; date: string; locale: Locale; timeZone: TimeZonePreference; colors: ReturnType<typeof themeFor>; onClose: () => void; onConfirm: (value: string) => void }) {
@@ -317,6 +324,8 @@ function WheelColumn({ values, selected, onSelect, colors }: { values: string[];
   const scrollRef = useRef<ScrollView>(null);
   const [centerValue, setCenterValue] = useState(selected);
   const lastOffsetRef = useRef(0);
+  const hasMomentumRef = useRef(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollToSelection = (animated = false) => {
     const index = Math.max(0, values.indexOf(selected));
     scrollRef.current?.scrollTo({ y: index * itemHeight, animated });
@@ -346,10 +355,20 @@ function WheelColumn({ values, selected, onSelect, colors }: { values: string[];
     setCenterValue(selected);
     const index = Math.max(0, valuesKey.split("|").indexOf(selected));
     const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: index * itemHeight, animated: false }), 40);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    };
   }, [selected, valuesKey]);
 
-  return <View style={{ width: 92, height: viewportHeight, overflow: "hidden", zIndex: 2 }}><ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} nestedScrollEnabled snapToInterval={itemHeight} disableIntervalMomentum decelerationRate="fast" scrollEventThrottle={16} onLayout={() => scrollToSelection(false)} onContentSizeChange={() => scrollToSelection(false)} onScroll={(event) => updateCenterValue(event.nativeEvent.contentOffset.y)} onMomentumScrollEnd={(event) => commitOffset(event.nativeEvent.contentOffset.y)} onScrollEndDrag={(event) => commitOffset(event.nativeEvent.contentOffset.y)} contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}>{values.map((value) => { const isSelected = value === centerValue; return <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: isSelected ? colors.text : colors.muted, fontSize: isSelected ? 30 : 21, fontWeight: isSelected ? "800" : "500", opacity: isSelected ? 1 : 0.56 }]}>{value}</Text></View>; })}</ScrollView></View>;
+  const scheduleSettling = () => {
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = setTimeout(() => {
+      if (!hasMomentumRef.current) commitOffset(lastOffsetRef.current);
+    }, 90);
+  };
+
+  return <View style={{ width: 92, height: viewportHeight, overflow: "hidden", zIndex: 2 }}><ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} nestedScrollEnabled snapToInterval={itemHeight} decelerationRate="normal" scrollEventThrottle={16} onLayout={() => scrollToSelection(false)} onScrollBeginDrag={() => { if (settleTimerRef.current) clearTimeout(settleTimerRef.current); }} onMomentumScrollBegin={() => { hasMomentumRef.current = true; if (settleTimerRef.current) clearTimeout(settleTimerRef.current); }} onScroll={(event) => updateCenterValue(event.nativeEvent.contentOffset.y)} onScrollEndDrag={scheduleSettling} onMomentumScrollEnd={(event) => { hasMomentumRef.current = false; commitOffset(event.nativeEvent.contentOffset.y); }} contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}>{values.map((value) => { const isSelected = value === centerValue; return <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: isSelected ? colors.text : colors.muted, fontSize: isSelected ? 30 : 21, fontWeight: isSelected ? "800" : "500", opacity: isSelected ? 1 : 0.56 }]}>{value}</Text></View>; })}</ScrollView></View>;
 }
 
 function SettingsSheet({ visible, colors, locale, isDark, entriesCount, timeZone, onClose, onThemeChange, onLocaleChange, onTimeZonePress, onExport, onClear }: {
@@ -372,7 +391,9 @@ function TimeZoneSheet({ visible, colors, locale, selected, onClose, onSelect }:
 
 function LanguageSheet({ visible, colors, locale, onClose, onSelect }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; onClose: () => void; onSelect: (value: Locale) => void }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("language")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><View style={[styles.settingsGroup, { backgroundColor: colors.surface, borderColor: colors.line }]}>{(Object.keys(LANGUAGE_OPTIONS) as Locale[]).map((key, index, options) => <Pressable key={key} onPress={() => onSelect(key)} style={({ pressed }) => [styles.settingsRowTouch, index < options.length - 1 && { borderBottomColor: colors.line, borderBottomWidth: StyleSheet.hairlineWidth }, pressed && styles.pressedIcon]}><View style={styles.settingsRowContent}><Text style={[styles.settingText, { color: colors.text }]}>{LANGUAGE_OPTIONS[key]}</Text>{key === locale ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</View></Pressable>)}</View></View></View></Modal>;
+  const languages = Object.keys(LANGUAGE_OPTIONS) as Locale[];
+  const renderLanguage = ({ item, index }: ListRenderItemInfo<Locale>) => <Pressable onPress={() => onSelect(item)} style={({ pressed }) => [styles.timeZoneRow, { borderBottomColor: colors.line, borderBottomWidth: index < languages.length - 1 ? StyleSheet.hairlineWidth : 0 }, pressed && { opacity: 0.6 }]}><Text style={[styles.timeZoneRowText, { color: colors.text }]}>{LANGUAGE_OPTIONS[item]}</Text>{item === locale ? <MaterialIcons name="check" size={20} color={colors.text} /> : null}</Pressable>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.timeZoneSheet, { backgroundColor: colors.background, height: 420 }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("language")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View><FlatList data={languages} keyExtractor={(item) => item} renderItem={renderLanguage} style={[styles.timeZoneList, { borderColor: colors.line }]} showsVerticalScrollIndicator={false} /></View></View></Modal>;
 }
 
 function ConfirmSheet({ visible, colors, locale, isAll, onClose, onConfirm }: { visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; isAll: boolean; onClose: () => void; onConfirm: () => void }) {
