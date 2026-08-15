@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildExport, formatDay, isEndAfterStart, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
+import { buildExport, formatDay, isEndAfterStart, isPastOrNow, isValidTime, sortEntries, t, zonedDateTimeToIso, type ChronicleEntry } from "../lib/chronicle";
 import { buildActivitySummary } from "../lib/activity-stats";
 import { systemAppName } from "../lib/app-brand";
 
@@ -48,6 +48,14 @@ describe("chronicle data utilities", () => {
     expect(isEndAfterStart("2026-08-15", "09:00", "08:00", "UTC")).toBe(false);
   });
 
+  it("rejects nonexistent local times during a DST spring-forward gap", () => {
+    expect(zonedDateTimeToIso("2026-03-08", "02:30", "America/New_York")).toBeNull();
+  });
+
+  it("rejects future records in the selected time zone", () => {
+    expect(isPastOrNow("2099-01-01", "00:00", "UTC")).toBe(false);
+  });
+
   it("provides translated interface copy for the expanded language set", () => {
     expect(t("ko", "settings")).toBe("설정");
     expect(t("es", "today")).toBe("Hoy");
@@ -69,6 +77,8 @@ describe("chronicle data utilities", () => {
     expect(summary.activeDays).toBe(1);
     expect(summary.currentStreak).toBe(1);
     expect(summary.weeks).toHaveLength(12);
+    expect(summary.weeks.flat()).toHaveLength(84);
+    expect(summary.weeks.flat().at(-1)?.date).toBe("2026-08-15");
   });
 
   it("uses a Chinese name only for Chinese system locales", () => {

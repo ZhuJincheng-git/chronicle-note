@@ -30,6 +30,7 @@ import {
   getSystemTimeZone,
   isEndAfterStart,
   isPastOrNow,
+  sortEntries,
   t,
   type ChronicleEntry,
   type Locale,
@@ -109,7 +110,9 @@ export default function HomeScreen() {
       section.data.push(entry);
       grouped.set(key, section);
     });
-    return [...grouped.values()];
+    return [...grouped.values()]
+      .map((section) => ({ ...section, data: sortEntries(section.data) }))
+      .sort((first, second) => second.key.localeCompare(first.key));
   }, [entries, timeZone]);
   const activitySummary = useMemo(() => buildActivitySummary(entries, timeZone), [entries, timeZone]);
 
@@ -142,9 +145,14 @@ export default function HomeScreen() {
       haptic.warning();
       return;
     }
-    await addEntry({ text: entryText, date: entryDate, startTime, endTime: isRange ? endTime : undefined });
-    haptic.success();
-    setEditorOpen(false);
+    try {
+      await addEntry({ text: entryText, date: entryDate, startTime, endTime: isRange ? endTime : undefined });
+      haptic.success();
+      setEditorOpen(false);
+    } catch {
+      setFormError(copy("invalidTime"));
+      haptic.warning();
+    }
   };
 
   const confirmDelete = async () => {
@@ -313,22 +321,35 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minim
   const hourRef = useRef(initial.hour);
   const minuteRef = useRef(initial.minute);
   useEffect(() => { if (visible) { const parts = splitTime(value); hourRef.current = parts.hour; minuteRef.current = parts.minute; setHour(parts.hour); setMinute(parts.minute); } }, [value, visible]);
-  const isAllowed = (candidateHour: string, candidateMinute: string) => {
-    const candidate = `${candidateHour}:${candidateMinute}`;
-    return isPastOrNow(date, candidate, timeZone) && (!minimumTime || candidate > minimumTime) && (!maximumTime || candidate < maximumTime);
-  };
-  const hours = HOURS.filter((candidateHour) => MINUTES.some((candidateMinute) => isAllowed(candidateHour, candidateMinute)));
+  const today = currentDateInTimeZone(timeZone);
+  const latestTime = date === today ? currentTimeInTimeZone(timeZone) : "23:59";
+  const allowedTimes = useMemo(() => HOURS.flatMap((candidateHour) => MINUTES.map((candidateMinute) => `${candidateHour}:${candidateMinute}`)).filter((candidate) => {
+    if (date > today || (date === today && candidate > latestTime)) return false;
+    return (!minimumTime || candidate > minimumTime) && (!maximumTime || candidate < maximumTime);
+  }), [date, latestTime, maximumTime, minimumTime, today]);
+  const allowedTimeSet = useMemo(() => new Set(allowedTimes), [allowedTimes]);
+  const isAllowed = (candidateHour: string, candidateMinute: string) => allowedTimeSet.has(`${candidateHour}:${candidateMinute}`);
+  const hours = useMemo(() => HOURS.filter((candidateHour) => allowedTimes.some((candidate) => candidate.startsWith(`${candidateHour}:`))), [allowedTimes]);
   const allowedHours = hours.length ? hours : HOURS;
-  const minutes = MINUTES.filter((candidateMinute) => isAllowed(String(hour).padStart(2, "0"), candidateMinute));
+  const minutes = useMemo(() => allowedTimes.filter((candidate) => candidate.startsWith(`${String(hour).padStart(2, "0")}:`)).map((candidate) => candidate.slice(3)), [allowedTimes, hour]);
   const allowedMinutes = minutes.length ? minutes : MINUTES;
-  const confirm = () => { const finalValue = `${String(hourRef.current).padStart(2, "0")}:${String(minuteRef.current).padStart(2, "0")}`; if (isPastOrNow(date, finalValue, timeZone)) onConfirm(finalValue); };
+  const confirm = () => {
+    const finalValue = `${String(hourRef.current).padStart(2, "0")}:${String(minuteRef.current).padStart(2, "0")}`;
+    const isConfirmable = (candidate: string) => isAllowed(candidate.slice(0, 2), candidate.slice(3)) && isPastOrNow(date, candidate, timeZone);
+    if (isConfirmable(finalValue)) {
+      onConfirm(finalValue);
+      return;
+    }
+    const fallback = allowedTimes.find(isConfirmable);
+    if (fallback) onConfirm(fallback);
+  };
   return <PickerSheet visible={visible} colors={colors} title={copy("selectTime")} done={copy("done")} onClose={onClose} onConfirm={confirm}><WheelColumn values={allowedHours} selected={String(hour).padStart(2, "0")} onSelect={(next) => { const nextHour = Number(next); hourRef.current = nextHour; setHour(nextHour); const firstMinute = MINUTES.find((candidate) => isAllowed(next, candidate)); if (firstMinute && !isAllowed(next, String(minuteRef.current).padStart(2, "0"))) { minuteRef.current = Number(firstMinute); setMinute(Number(firstMinute)); } }} colors={colors} /><Text style={[styles.wheelDivider, { color: colors.muted }]}>:</Text><WheelColumn values={allowedMinutes} selected={String(minute).padStart(2, "0")} onSelect={(next) => { minuteRef.current = Number(next); setMinute(Number(next)); }} colors={colors} /></PickerSheet>;
 }
 
 function PickerSheet({ visible, colors, title, done, onClose, onConfirm, children }: { visible: boolean; colors: ReturnType<typeof themeFor>; title: string; done: string; onClose: () => void; onConfirm: () => void; children: React.ReactNode }) {
   const itemHeight = 46;
   const panelHeight = 248;
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { height: panelHeight, backgroundColor: colors.surface, borderColor: colors.line }]}><View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", zIndex: 2 }}>{children}</View><View pointerEvents="none" style={{ position: "absolute", zIndex: 1, left: 10, right: 10, top: (panelHeight - itemHeight) / 2, height: itemHeight, borderRadius: 16, backgroundColor: colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line }} /></View></View></View></Modal>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { height: panelHeight, backgroundColor: colors.surface, borderColor: colors.line }]}><View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", zIndex: 2 }}>{children}</View><View style={{ pointerEvents: "none", position: "absolute", zIndex: 1, left: 10, right: 10, top: (panelHeight - itemHeight) / 2, height: itemHeight, borderRadius: 16, backgroundColor: colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line }} /></View></View></View></Modal>;
 }
 
 function WheelColumn({ values, selected, onSelect, colors }: { values: string[]; selected: string; onSelect: (value: string) => void; colors: ReturnType<typeof themeFor> }) {
