@@ -11,6 +11,9 @@ export const haptic = {
   success: () => {
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
+  selection: () => {
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+  },
   warning: () => {
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   },

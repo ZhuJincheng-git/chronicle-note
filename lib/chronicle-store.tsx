@@ -1,17 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
-import { atToday, defaultChronicleState, sortEntries, type ChronicleEntry, type ChronicleState, type Locale, type ThemeMode } from "@/lib/chronicle";
+import { defaultChronicleState, sortEntries, zonedDateTimeToIso, type ChronicleEntry, type ChronicleState, type Locale, type ThemeMode, type TimeZonePreference } from "@/lib/chronicle";
 
 const STORAGE_KEY = "chronicle-state-v1";
 
 interface ChronicleContextValue extends ChronicleState {
   isReady: boolean;
-  addEntry: (input: { text: string; startTime: string; endTime?: string }) => Promise<void>;
+  addEntry: (input: { text: string; date: string; startTime: string; endTime?: string }) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   clearEntries: () => Promise<void>;
   setLocale: (locale: Locale) => Promise<void>;
   setTheme: (theme: ThemeMode) => Promise<void>;
+  setTimeZone: (timeZone: TimeZonePreference) => Promise<void>;
 }
 
 const ChronicleContext = createContext<ChronicleContextValue | null>(null);
@@ -21,6 +22,7 @@ function normalizeState(value: Partial<ChronicleState>): ChronicleState {
     entries: Array.isArray(value.entries) ? sortEntries(value.entries) : [],
     locale: value.locale === "en" || value.locale === "ja" ? value.locale : "zh",
     theme: value.theme === "dark" ? "dark" : "light",
+    timeZone: typeof value.timeZone === "string" && value.timeZone ? value.timeZone : "system",
   };
 }
 
@@ -42,12 +44,15 @@ export function ChronicleProvider({ children }: PropsWithChildren) {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
-  const addEntry = useCallback(async (input: { text: string; startTime: string; endTime?: string }) => {
+  const addEntry = useCallback(async (input: { text: string; date: string; startTime: string; endTime?: string }) => {
+    const startAt = zonedDateTimeToIso(input.date, input.startTime, state.timeZone);
+    const endAt = input.endTime ? zonedDateTimeToIso(input.date, input.endTime, state.timeZone) : undefined;
+    if (!startAt || (input.endTime && !endAt)) throw new Error("Invalid zoned date and time");
     const entry: ChronicleEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text: input.text.trim(),
-      startAt: atToday(input.startTime),
-      endAt: input.endTime ? atToday(input.endTime) : undefined,
+      startAt,
+      endAt: endAt ?? undefined,
       createdAt: new Date().toISOString(),
     };
     const next = { ...state, entries: sortEntries([entry, ...state.entries]) };
@@ -70,7 +75,11 @@ export function ChronicleProvider({ children }: PropsWithChildren) {
     await persist({ ...state, theme });
   }, [persist, state]);
 
-  const value = useMemo(() => ({ ...state, isReady, addEntry, deleteEntry, clearEntries, setLocale, setTheme }), [addEntry, clearEntries, deleteEntry, isReady, setLocale, setTheme, state]);
+  const setTimeZone = useCallback(async (timeZone: TimeZonePreference) => {
+    await persist({ ...state, timeZone });
+  }, [persist, state]);
+
+  const value = useMemo(() => ({ ...state, isReady, addEntry, deleteEntry, clearEntries, setLocale, setTheme, setTimeZone }), [addEntry, clearEntries, deleteEntry, isReady, setLocale, setTheme, setTimeZone, state]);
 
   return <ChronicleContext.Provider value={value}>{children}</ChronicleContext.Provider>;
 }

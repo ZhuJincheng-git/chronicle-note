@@ -2,10 +2,10 @@ import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
-import { buildExport, type ChronicleEntry, type Locale } from "@/lib/chronicle";
+import { buildExport, type ChronicleEntry, type Locale, type TimeZonePreference } from "@/lib/chronicle";
 
-export async function exportChronicle(entries: ChronicleEntry[], locale: Locale, shareTitle: string): Promise<boolean> {
-  const content = buildExport(entries, locale);
+export async function exportChronicle(entries: ChronicleEntry[], locale: Locale, timeZone: TimeZonePreference, shareTitle: string): Promise<boolean> {
+  const content = buildExport(entries, locale, timeZone);
 
   if (Platform.OS === "web") {
     if (typeof document === "undefined") return false;
