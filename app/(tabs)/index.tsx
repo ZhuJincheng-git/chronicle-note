@@ -7,9 +7,11 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
+  SectionList,
   StyleSheet,
   Switch,
   Text,
@@ -38,7 +40,7 @@ import { useChronicle } from "@/lib/chronicle-store";
 import { exportChronicle } from "@/lib/export-chronicle";
 import { haptic } from "@/lib/haptics";
 
-type TimelineItem = { type: "day"; key: string; iso: string } | { type: "entry"; key: string; entry: ChronicleEntry };
+type TimelineSection = { data: ChronicleEntry[]; iso: string; key: string };
 type DeleteTarget = ChronicleEntry | "all" | null;
 
 const HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
@@ -84,24 +86,46 @@ export default function HomeScreen() {
   const [startTime, setStartTime] = useState(currentTimeInTimeZone(timeZone));
   const [endTime, setEndTime] = useState(currentTimeInTimeZone(timeZone));
   const [isRange, setIsRange] = useState(false);
+  const [activeDateIndex, setActiveDateIndex] = useState(0);
+  const [dateIndexHeight, setDateIndexHeight] = useState(0);
+  const timelineRef = useRef<SectionList<ChronicleEntry, TimelineSection> | null>(null);
 
   const isDark = theme === "dark";
   const colors = themeFor(isDark);
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
 
-  const items = useMemo<TimelineItem[]>(() => {
-    const result: TimelineItem[] = [];
-    let activeDate = "";
+  const sections = useMemo<TimelineSection[]>(() => {
+    const grouped = new Map<string, TimelineSection>();
     entries.forEach((entry) => {
       const key = dateKey(entry.startAt, timeZone);
-      if (key !== activeDate) {
-        result.push({ type: "day", key: `day-${key}`, iso: entry.startAt });
-        activeDate = key;
-      }
-      result.push({ type: "entry", key: entry.id, entry });
+      const section = grouped.get(key) ?? { key, iso: entry.startAt, data: [] };
+      section.data.push(entry);
+      grouped.set(key, section);
     });
-    return result;
+    return [...grouped.values()];
   }, [entries, timeZone]);
+
+  const dateIndexLabels = useMemo(() => sections.map((section) => dateKey(section.iso, timeZone).slice(5).replace("-", "/")), [sections, timeZone]);
+
+  const scrollToDate = (index: number) => {
+    if (!sections.length) return;
+    const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
+    setActiveDateIndex(nextIndex);
+    timelineRef.current?.scrollToLocation({ sectionIndex: nextIndex, itemIndex: 0, viewPosition: 0 });
+  };
+
+  const moveDateIndex = (locationY: number) => {
+    if (!sections.length || !dateIndexHeight) return;
+    const nextIndex = Math.round((locationY / dateIndexHeight) * (sections.length - 1));
+    if (nextIndex !== activeDateIndex) scrollToDate(nextIndex);
+  };
+
+  const dateIndexResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => sections.length > 1,
+    onMoveShouldSetPanResponder: () => sections.length > 1,
+    onPanResponderGrant: (event) => moveDateIndex(event.nativeEvent.locationY),
+    onPanResponderMove: (event) => moveDateIndex(event.nativeEvent.locationY),
+  });
 
   const openEditor = () => {
     const nowDate = currentDateInTimeZone(timeZone);
@@ -153,17 +177,7 @@ export default function HomeScreen() {
     }
   };
 
-  const renderItem = ({ item }: ListRenderItemInfo<TimelineItem>) => {
-    if (item.type === "day") {
-      return (
-        <View style={styles.dayHeader}>
-          <Text style={[styles.dayText, { color: colors.text }]}>{formatDay(item.iso, locale, timeZone)}</Text>
-          <View style={[styles.dayLine, { backgroundColor: colors.line }]} />
-        </View>
-      );
-    }
-
-    const { entry } = item;
+  const renderEntry = ({ item: entry }: ListRenderItemInfo<ChronicleEntry>) => {
     const time = entry.endAt ? `${formatTime(entry.startAt, locale, timeZone)}–${formatTime(entry.endAt, locale, timeZone)}` : formatTime(entry.startAt, locale, timeZone);
     return (
       <View style={styles.timelineRow}>
@@ -200,13 +214,19 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.key}
+        <SectionList
+          ref={timelineRef}
+          sections={sections}
+          renderItem={renderEntry}
+          keyExtractor={(item) => item.id}
           style={styles.list}
-          contentContainerStyle={[items.length ? styles.listContent : styles.emptyListContent, { paddingBottom: Math.max(insets.bottom + 108, 128) }]}
+          contentContainerStyle={[sections.length ? styles.listContent : styles.emptyListContent, { paddingBottom: Math.max(insets.bottom + 108, 128) }]}
           ListHeaderComponent={<Text style={[styles.timelineTitle, { color: colors.text }]}>{copy("timeline")}</Text>}
+          renderSectionHeader={({ section }) => <View style={[styles.dayHeader, { backgroundColor: colors.background, paddingTop: 15, paddingBottom: 10 }]}><Text style={[styles.dayText, { color: colors.text }]}>{formatDay(section.iso, locale, timeZone)}</Text><View style={[styles.dayLine, { backgroundColor: colors.line }]} /></View>}
+          stickySectionHeadersEnabled
+          onViewableItemsChanged={({ viewableItems }) => { const firstEntry = viewableItems.find((item) => item.item); if (firstEntry?.item) { const index = sections.findIndex((section) => section.data.some((entry) => entry.id === firstEntry.item.id)); if (index >= 0) setActiveDateIndex(index); } }}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
+          onScrollToIndexFailed={({ index }) => setTimeout(() => timelineRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, animated: true }), 80)}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}><MaterialIcons name="schedule" size={34} color={colors.text} /></View>
@@ -216,6 +236,8 @@ export default function HomeScreen() {
           }
           showsVerticalScrollIndicator={false}
         />
+
+        {sections.length > 1 ? <View {...dateIndexResponder.panHandlers} onLayout={(event) => setDateIndexHeight(event.nativeEvent.layout.height)} style={{ position: "absolute", zIndex: 30, right: 4, top: 144, bottom: 86, justifyContent: "center", alignItems: "center", minWidth: 38 }}><View style={[{ borderRadius: 18, paddingVertical: 8, paddingHorizontal: 5, gap: 4 }, { backgroundColor: colors.surface }]}>{dateIndexLabels.map((label, index) => <Text key={label} style={{ color: index === activeDateIndex ? colors.text : colors.muted, fontSize: index === activeDateIndex ? 11 : 9, fontWeight: index === activeDateIndex ? "800" : "600", fontVariant: ["tabular-nums"] }}>{label}</Text>)}</View></View> : null}
 
         <Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse, bottom: 16, zIndex: 100, elevation: 100 }, pressed && styles.pressedMain]}>
           <MaterialIcons name="add" size={22} color={colors.background} />
