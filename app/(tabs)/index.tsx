@@ -304,7 +304,7 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, onClo
 function PickerSheet({ visible, colors, title, done, onClose, onConfirm, children }: { visible: boolean; colors: ReturnType<typeof themeFor>; title: string; done: string; onClose: () => void; onConfirm: () => void; children: React.ReactNode }) {
   const itemHeight = 46;
   const panelHeight = 248;
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { height: panelHeight, backgroundColor: colors.surface, borderColor: colors.line }]}>{children}<View pointerEvents="none" style={{ position: "absolute", left: 10, right: 10, top: (panelHeight - itemHeight) / 2, height: itemHeight, borderRadius: 16, backgroundColor: colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, pointerEvents: "none" }} /></View></View></View></Modal>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={onClose} /><View style={[styles.pickerSheet, { backgroundColor: colors.background }]}><View style={[styles.handle, { backgroundColor: colors.line }]} /><View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text><Pressable onPress={onConfirm} hitSlop={12}><Text style={[styles.doneText, { color: colors.text }]}>{done}</Text></Pressable></View><View style={[styles.wheelPanel, { height: panelHeight, backgroundColor: colors.surface, borderColor: colors.line }]}><View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", zIndex: 2 }}>{children}</View><View pointerEvents="none" style={{ position: "absolute", zIndex: 1, left: 10, right: 10, top: (panelHeight - itemHeight) / 2, height: itemHeight, borderRadius: 16, backgroundColor: colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line }} /></View></View></View></Modal>;
 }
 
 function WheelColumn({ values, selected, onSelect, colors }: { values: string[]; selected: string; onSelect: (value: string) => void; colors: ReturnType<typeof themeFor> }) {
@@ -312,27 +312,41 @@ function WheelColumn({ values, selected, onSelect, colors }: { values: string[];
   const viewportHeight = 248;
   const valuesKey = values.join("|");
   const scrollRef = useRef<ScrollView>(null);
+  const [centerValue, setCenterValue] = useState(selected);
+  const lastOffsetRef = useRef(0);
   const scrollToSelection = (animated = false) => {
     const index = Math.max(0, values.indexOf(selected));
     scrollRef.current?.scrollTo({ y: index * itemHeight, animated });
   };
-  const commitOffset = (offsetY: number) => {
+  const valueAtOffset = (offsetY: number) => {
     const index = Math.max(0, Math.min(values.length - 1, Math.round(offsetY / itemHeight)));
-    const next = values[index];
+    return values[index];
+  };
+  const updateCenterValue = (offsetY: number) => {
+    lastOffsetRef.current = offsetY;
+    const next = valueAtOffset(offsetY);
+    if (next) setCenterValue(next);
+  };
+  const commitOffset = (offsetY: number) => {
+    const next = valueAtOffset(offsetY);
+    if (!next) return;
+    const index = values.indexOf(next);
     scrollRef.current?.scrollTo({ y: index * itemHeight, animated: true });
-    if (next && next !== selected) {
+    setCenterValue(next);
+    if (next !== selected) {
       haptic.selection();
       onSelect(next);
     }
   };
 
   useEffect(() => {
+    setCenterValue(selected);
     const index = Math.max(0, valuesKey.split("|").indexOf(selected));
     const timer = setTimeout(() => scrollRef.current?.scrollTo({ y: index * itemHeight, animated: false }), 40);
     return () => clearTimeout(timer);
   }, [selected, valuesKey]);
 
-  return <View style={{ width: 92, height: viewportHeight, overflow: "hidden" }}><ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} nestedScrollEnabled snapToInterval={itemHeight} disableIntervalMomentum decelerationRate="fast" scrollEventThrottle={16} onLayout={() => scrollToSelection(false)} onMomentumScrollEnd={(event) => commitOffset(event.nativeEvent.contentOffset.y)} onScrollEndDrag={(event) => { if (!event.nativeEvent.velocity?.y) commitOffset(event.nativeEvent.contentOffset.y); }} contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}>{values.map((value) => { const isSelected = value === selected; return <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: isSelected ? colors.text : colors.muted, fontSize: isSelected ? 30 : 21, fontWeight: isSelected ? "800" : "500", opacity: isSelected ? 1 : 0.68 }]}>{value}</Text></View>; })}</ScrollView></View>;
+  return <View style={{ width: 92, height: viewportHeight, overflow: "hidden", zIndex: 2 }}><ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} nestedScrollEnabled snapToInterval={itemHeight} disableIntervalMomentum decelerationRate="fast" scrollEventThrottle={16} onLayout={() => scrollToSelection(false)} onContentSizeChange={() => scrollToSelection(false)} onScroll={(event) => updateCenterValue(event.nativeEvent.contentOffset.y)} onMomentumScrollEnd={(event) => commitOffset(event.nativeEvent.contentOffset.y)} onScrollEndDrag={(event) => commitOffset(event.nativeEvent.contentOffset.y)} contentContainerStyle={{ paddingVertical: (viewportHeight - itemHeight) / 2 }}>{values.map((value) => { const isSelected = value === centerValue; return <View key={value} style={{ height: itemHeight, alignItems: "center", justifyContent: "center" }}><Text style={[styles.wheelValue, { color: isSelected ? colors.text : colors.muted, fontSize: isSelected ? 30 : 21, fontWeight: isSelected ? "800" : "500", opacity: isSelected ? 1 : 0.56 }]}>{value}</Text></View>; })}</ScrollView></View>;
 }
 
 function SettingsSheet({ visible, colors, locale, isDark, entriesCount, timeZone, onClose, onThemeChange, onLocaleChange, onTimeZonePress, onExport, onClear }: {
