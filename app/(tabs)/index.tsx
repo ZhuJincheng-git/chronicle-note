@@ -323,10 +323,20 @@ function TimePickerSheet({ visible, value, date, locale, timeZone, colors, minim
   useEffect(() => { if (visible) { const parts = splitTime(value); hourRef.current = parts.hour; minuteRef.current = parts.minute; setHour(parts.hour); setMinute(parts.minute); } }, [value, visible]);
   const today = currentDateInTimeZone(timeZone);
   const latestTime = date === today ? currentTimeInTimeZone(timeZone) : "23:59";
+  const maximumBound = date === today && maximumTime
+    ? (maximumTime < latestTime ? maximumTime : latestTime)
+    : date === today
+      ? latestTime
+      : maximumTime;
+  const maximumBoundInclusive = date === today && maximumTime
+    ? maximumTime >= latestTime ? true : maximumTimeInclusive
+    : date === today
+      ? true
+      : maximumTimeInclusive;
   const allowedTimes = useMemo(() => HOURS.flatMap((candidateHour) => MINUTES.map((candidateMinute) => `${candidateHour}:${candidateMinute}`)).filter((candidate) => {
-    if (date > today || (date === today && candidate > latestTime)) return false;
-    return (!minimumTime || candidate > minimumTime) && (!maximumTime || (maximumTimeInclusive ? candidate <= maximumTime : candidate < maximumTime));
-  }), [date, latestTime, maximumTime, maximumTimeInclusive, minimumTime, today]);
+    if (date > today) return false;
+    return (!minimumTime || candidate > minimumTime) && (!maximumBound || (maximumBoundInclusive ? candidate <= maximumBound : candidate < maximumBound));
+  }), [date, maximumBound, maximumBoundInclusive, minimumTime, today]);
   const allowedTimeSet = useMemo(() => new Set(allowedTimes), [allowedTimes]);
   useEffect(() => {
     if (!visible || allowedTimes.length === 0) return;
