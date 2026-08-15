@@ -79,7 +79,6 @@ export default function HomeScreen() {
   const [timePickerTarget, setTimePickerTarget] = useState<"start" | "end" | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [entryText, setEntryText] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
   const [entryDate, setEntryDate] = useState(currentDateInTimeZone(timeZone));
   const [startTime, setStartTime] = useState(currentTimeInTimeZone(timeZone));
   const [endTime, setEndTime] = useState(currentTimeInTimeZone(timeZone));
@@ -107,7 +106,6 @@ export default function HomeScreen() {
     const nowDate = currentDateInTimeZone(timeZone);
     const nowTime = currentTimeInTimeZone(timeZone);
     setEntryText("");
-    setFormError(null);
     setEntryDate(nowDate);
     setStartTime(nowTime);
     setEndTime(nowTime);
@@ -118,8 +116,6 @@ export default function HomeScreen() {
 
   const saveEntry = async () => {
     if (!entryText.trim()) {
-      setFormError(copy("missingText"));
-      haptic.warning();
       Alert.alert(copy("missingText"));
       return;
     }
@@ -189,7 +185,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScreenContainer edges={["top", "bottom", "left", "right"]} containerClassName={isDark ? "bg-black" : "bg-white"} className="flex-1">
+    <ScreenContainer containerClassName={isDark ? "bg-black" : "bg-white"} className="flex-1">
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <View>
@@ -218,13 +214,16 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        <View pointerEvents="box-none" style={[{ position: "absolute", right: 20, zIndex: 30, elevation: 30 }, { bottom: 20 + Math.max(insets.bottom, 0) }]}><Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse }, pressed && styles.pressedMain]}><MaterialIcons name="add" size={22} color={colors.background} /><Text style={[styles.recordButtonText, { color: colors.background }]}>{copy("add")}</Text></Pressable></View>
+        <Pressable onPress={openEditor} style={({ pressed }) => [styles.recordButton, { backgroundColor: colors.inverse, bottom: Math.max(insets.bottom + 16, 28) }, pressed && styles.pressedMain]}>
+          <MaterialIcons name="add" size={22} color={colors.background} />
+          <Text style={[styles.recordButtonText, { color: colors.background }]}>{copy("add")}</Text>
+        </Pressable>
       </View>
 
-      <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} errorMessage={formError} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={(value) => { setEntryText(value); if (formError) setFormError(null); }} onRangeChange={setIsRange} onDatePress={() => { setEditorOpen(false); setDatePickerOpen(true); }} onStartPress={() => { setEditorOpen(false); setTimePickerTarget("start"); }} onEndPress={() => { setEditorOpen(false); setTimePickerTarget("end"); }} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
-      <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setDatePickerOpen(false); setEditorOpen(true); }} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); setEditorOpen(true); }} />
-      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => { setTimePickerTarget(null); setEditorOpen(true); }} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); setEditorOpen(true); }} />
-      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onLocaleChange={() => { setSettingsOpen(false); setLanguageOpen(true); }} onTimeZonePress={() => { setSettingsOpen(false); setTimeZoneOpen(true); }} onExport={handleExport} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
+      <EditorSheet visible={editorOpen} colors={colors} locale={locale} date={entryDate} text={entryText} startTime={startTime} endTime={endTime} isRange={isRange} onTextChange={setEntryText} onRangeChange={setIsRange} onDatePress={() => setDatePickerOpen(true)} onStartPress={() => setTimePickerTarget("start")} onEndPress={() => setTimePickerTarget("end")} onClose={() => setEditorOpen(false)} onSave={saveEntry} />
+      <DatePickerSheet visible={datePickerOpen} value={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => setDatePickerOpen(false)} onConfirm={(value) => { setEntryDate(value); setDatePickerOpen(false); }} />
+      <TimePickerSheet visible={Boolean(timePickerTarget)} value={timePickerTarget === "end" ? endTime : startTime} date={entryDate} locale={locale} timeZone={timeZone} colors={colors} onClose={() => setTimePickerTarget(null)} onConfirm={(value) => { if (timePickerTarget === "end") setEndTime(value); else setStartTime(value); setTimePickerTarget(null); }} />
+      <SettingsSheet visible={settingsOpen} colors={colors} locale={locale} isDark={isDark} entriesCount={entries.length} timeZone={timeZone} onClose={() => setSettingsOpen(false)} onThemeChange={(next) => { haptic.medium(); setTheme(next ? "dark" : "light"); }} onLocaleChange={() => setLanguageOpen(true)} onTimeZonePress={() => setTimeZoneOpen(true)} onExport={handleExport} onClear={() => { setSettingsOpen(false); setDeleteTarget("all"); }} />
       <LanguageSheet visible={languageOpen} colors={colors} locale={locale} onClose={() => setLanguageOpen(false)} onSelect={(value) => { haptic.medium(); setLocale(value); setLanguageOpen(false); }} />
       <TimeZoneSheet visible={timeZoneOpen} colors={colors} locale={locale} selected={timeZone} onClose={() => setTimeZoneOpen(false)} onSelect={(value) => { haptic.medium(); setTimeZone(value); setTimeZoneOpen(false); }} />
       <ConfirmSheet visible={Boolean(deleteTarget)} colors={colors} locale={locale} isAll={deleteTarget === "all"} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
@@ -232,8 +231,8 @@ export default function HomeScreen() {
   );
 }
 
-function EditorSheet({ visible, colors, locale, date, text, errorMessage, startTime, endTime, isRange, onTextChange, onRangeChange, onDatePress, onStartPress, onEndPress, onClose, onSave }: {
-  visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; date: string; text: string; errorMessage: string | null; startTime: string; endTime: string; isRange: boolean;
+function EditorSheet({ visible, colors, locale, date, text, startTime, endTime, isRange, onTextChange, onRangeChange, onDatePress, onStartPress, onEndPress, onClose, onSave }: {
+  visible: boolean; colors: ReturnType<typeof themeFor>; locale: Locale; date: string; text: string; startTime: string; endTime: string; isRange: boolean;
   onTextChange: (value: string) => void; onRangeChange: (value: boolean) => void; onDatePress: () => void; onStartPress: () => void; onEndPress: () => void; onClose: () => void; onSave: () => void;
 }) {
   const copy = (key: Parameters<typeof t>[1]) => t(locale, key);
@@ -247,7 +246,6 @@ function EditorSheet({ visible, colors, locale, date, text, errorMessage, startT
           <View style={styles.sheetHeader}><Text style={[styles.sheetTitle, { color: colors.text }]}>{copy("newRecord")}</Text><Pressable onPress={onClose} hitSlop={12} style={({ pressed }) => [styles.closeButton, { backgroundColor: colors.surface }, pressed && styles.pressedIcon]}><MaterialIcons name="close" size={19} color={colors.text} /></Pressable></View>
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>{copy("activity")}</Text>
           <TextInput value={text} onChangeText={onTextChange} placeholder={copy("activityPlaceholder")} placeholderTextColor={colors.muted} multiline maxLength={300} style={[styles.activityInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.line }]} />
-          {errorMessage ? <View style={[{ minHeight: 40, marginTop: -7, marginBottom: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", alignItems: "center", gap: 7 }, { backgroundColor: colors.surface, borderColor: "#FF453A" }]}><MaterialIcons name="error-outline" size={17} color="#FF453A" /><Text style={{ flex: 1, color: "#FF453A", fontSize: 13, fontWeight: "600" }}>{errorMessage}</Text></View> : null}
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>{copy("date")}</Text>
           <Pressable onPress={() => { haptic.light(); onDatePress(); }} style={({ pressed }) => [styles.selectorButton, { backgroundColor: colors.surface, borderColor: colors.line }, pressed && styles.pressedIcon]}>
             <View style={styles.selectorLeading}><MaterialIcons name="calendar-today" size={18} color={colors.text} /><Text style={[styles.selectorValue, { color: colors.text }]}>{date}</Text></View>
